@@ -4,7 +4,7 @@ import CreateAssignmentModal from './CreateAssignmentModal'
 import CreateAnnouncementModal from './CreateAnnouncementModal'
 import UploadMaterialModal from './UploadMaterialModal'
 
-const API_BASE_URL = '/api'
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
 
 function CourseDetail({ course, user, onBack, onUpdate }) {
   const [activeSubTab, setActiveSubTab] = useState('assignments')

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import AssignmentDetail from './AssignmentDetail'
 
-const API_BASE_URL = '/api'
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
 
 function Assignments({ user }) {
   const [assignments, setAssignments] = useState([])

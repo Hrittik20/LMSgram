@@ -4,7 +4,7 @@ import Dashboard from './components/Dashboard'
 import Courses from './components/Courses'
 import Assignments from './components/Assignments'
 
-const API_BASE_URL = '/api'
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
 
 function App() {
   const [user, setUser] = useState(null)
