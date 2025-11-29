@@ -56,95 +56,151 @@ function Dashboard({ user }) {
 
   return (
     <div>
-      <h2 style={{ marginBottom: '1.5rem', fontSize: '1.5rem' }}>
-        Welcome back, {user.first_name}! 👋
-      </h2>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-        <div className="card" style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📚</div>
-          <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--primary-color)' }}>
-            {stats.totalCourses}
-          </div>
-          <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-            {user.role === 'teacher' ? 'Courses Teaching' : 'Courses Enrolled'}
-          </div>
-        </div>
-
-        <div className="card" style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📝</div>
-          <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--primary-color)' }}>
-            {stats.totalAssignments}
-          </div>
-          <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-            Total Assignments
-          </div>
-        </div>
-
-        {user.role === 'student' && (
-          <>
-            <div className="card" style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>⏰</div>
-              <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--warning-color)' }}>
-                {stats.pendingSubmissions}
-              </div>
-              <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                Pending
-              </div>
-            </div>
-
-            <div className="card" style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>⭐</div>
-              <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--success-color)' }}>
-                {stats.averageGrade}%
-              </div>
-              <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                Avg Grade
-              </div>
-            </div>
-          </>
-        )}
+      <div style={{ 
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        borderRadius: '20px',
+        padding: '2rem 1.5rem',
+        marginBottom: '2rem',
+        color: 'white',
+        boxShadow: '0 10px 30px rgba(102, 126, 234, 0.3)'
+      }}>
+        <h2 style={{ marginBottom: '0.5rem', fontSize: '1.75rem', fontWeight: '700' }}>
+          Welcome back, {user.first_name}! 👋
+        </h2>
+        <p style={{ opacity: 0.9, fontSize: '0.95rem' }}>
+          {user.role === 'teacher' 
+            ? 'Ready to inspire minds today?' 
+            : 'Keep up the great work with your studies!'}
+        </p>
       </div>
 
-      <h3 style={{ marginBottom: '1rem', fontSize: '1.25rem' }}>📌 Quick Actions</h3>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+        <div className="card" style={{ 
+          textAlign: 'center',
+          background: 'linear-gradient(135deg, #667eea15 0%, #764ba215 100%)',
+          border: '2px solid #667eea30'
+        }}>
+          <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }}>📚</div>
+          <div style={{ fontSize: '2.5rem', fontWeight: '800', color: 'var(--primary-color)', marginBottom: '0.25rem' }}>
+            {stats.totalCourses}
+          </div>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            {user.role === 'teacher' ? 'Courses' : 'Enrolled'}
+          </div>
+        </div>
+
+        <div className="card" style={{ 
+          textAlign: 'center',
+          background: 'linear-gradient(135deg, #f093fb15 0%, #f5576c15 100%)',
+          border: '2px solid #f093fb30'
+        }}>
+          <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }}>📝</div>
+          <div style={{ fontSize: '2.5rem', fontWeight: '800', color: '#f5576c', marginBottom: '0.25rem' }}>
+            {stats.totalAssignments}
+          </div>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            Assignments
+          </div>
+        </div>
+
+        <div className="card" style={{ 
+          textAlign: 'center',
+          background: 'linear-gradient(135deg, #ffeaa715 0%, #fbda6115 100%)',
+          border: '2px solid #ffeaa730'
+        }}>
+          <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }}>⏰</div>
+          <div style={{ fontSize: '2.5rem', fontWeight: '800', color: 'var(--warning-color)', marginBottom: '0.25rem' }}>
+            {stats.pendingSubmissions}
+          </div>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            Pending
+          </div>
+        </div>
+
+        <div className="card" style={{ 
+          textAlign: 'center',
+          background: 'linear-gradient(135deg, #a8edea15 0%, #fed6e315 100%)',
+          border: '2px solid #a8edea30'
+        }}>
+          <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }}>⭐</div>
+          <div style={{ fontSize: '2.5rem', fontWeight: '800', color: 'var(--success-color)', marginBottom: '0.25rem' }}>
+            {stats.averageGrade}%
+          </div>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            Avg Grade
+          </div>
+        </div>
+      </div>
+
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        marginBottom: '1rem'
+      }}>
+        <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '700', color: 'var(--text-primary)' }}>
+          ⚡ Quick Actions
+        </h3>
+      </div>
       
-      <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
-        {user.role === 'teacher' ? (
-          <>
-            <button className="btn btn-primary">
-              ➕ Create Course
-            </button>
-            <button className="btn btn-secondary">
-              📊 View Analytics
-            </button>
-          </>
-        ) : (
-          <>
-            <button className="btn btn-primary">
-              🔍 Join Course
-            </button>
-            <button className="btn btn-secondary">
-              📚 Browse Materials
-            </button>
-          </>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+        {user.role === 'teacher' && (
+          <button className="btn btn-primary" style={{ padding: '1rem' }}>
+            <span style={{ fontSize: '1.5rem' }}>➕</span>
+            <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.1rem' }}>
+              <span style={{ fontWeight: '700' }}>Create Course</span>
+              <span style={{ fontSize: '0.75rem', opacity: 0.9 }}>Start teaching</span>
+            </span>
+          </button>
         )}
+        <button className="btn btn-success" style={{ padding: '1rem' }}>
+          <span style={{ fontSize: '1.5rem' }}>🎓</span>
+          <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.1rem' }}>
+            <span style={{ fontWeight: '700' }}>Join Course</span>
+            <span style={{ fontSize: '0.75rem', opacity: 0.9 }}>Enter access code</span>
+          </span>
+        </button>
+        <button className="btn btn-secondary" style={{ padding: '1rem' }}>
+          <span style={{ fontSize: '1.5rem' }}>📚</span>
+          <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.1rem' }}>
+            <span style={{ fontWeight: '700' }}>Browse Materials</span>
+            <span style={{ fontSize: '0.75rem', opacity: 0.9 }}>View resources</span>
+          </span>
+        </button>
       </div>
 
       {stats.totalCourses === 0 && (
-        <div className="empty-state">
-          <div className="empty-state-icon">
-            {user.role === 'teacher' ? '👨‍🏫' : '👨‍🎓'}
+        <div style={{
+          background: 'linear-gradient(135deg, #ffeaa715 0%, #fbda6115 100%)',
+          border: '2px dashed #fbbf24',
+          borderRadius: '20px',
+          padding: '3rem 2rem',
+          textAlign: 'center',
+          marginTop: '1rem'
+        }}>
+          <div style={{ fontSize: '4rem', marginBottom: '1rem', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.1))' }}>
+            {user.role === 'teacher' ? '🎯' : '🚀'}
           </div>
-          <div className="empty-state-text">
+          <h3 style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '0.75rem' }}>
             {user.role === 'teacher' 
-              ? 'Create your first course to get started!' 
-              : 'Join a course to start learning!'}
-          </div>
-          <p style={{ fontSize: '0.9rem', marginTop: '0.5rem' }}>
+              ? 'Start Your Teaching Journey!' 
+              : 'Begin Your Learning Adventure!'}
+          </h3>
+          <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', marginBottom: '1.5rem', maxWidth: '400px', margin: '0 auto 1.5rem' }}>
             {user.role === 'teacher'
-              ? 'Go to the Courses tab to create a new course.'
-              : 'Ask your teacher for a course access code.'}
+              ? 'Create your first course and share knowledge with students around the world.'
+              : 'Join a course and start learning something amazing today!'}
           </p>
+          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            {user.role === 'teacher' && (
+              <button className="btn btn-primary">
+                ➕ Create First Course
+              </button>
+            )}
+            <button className="btn btn-success">
+              🎓 Join Course
+            </button>
+          </div>
         </div>
       )}
     </div>

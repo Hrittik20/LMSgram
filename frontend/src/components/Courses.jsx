@@ -55,73 +55,87 @@ function Courses({ user }) {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <h2 style={{ fontSize: '1.5rem' }}>
-          {user.role === 'teacher' ? 'My Courses' : 'Enrolled Courses'}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+        <h2 style={{ fontSize: '1.5rem', margin: 0 }}>
+          My Courses
         </h2>
-        {user.role === 'teacher' ? (
-          <button className="btn btn-primary" onClick={() => setShowCreateModal(true)}>
-            ➕ Create Course
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          {user.role === 'teacher' && (
+            <button className="btn btn-primary" onClick={() => setShowCreateModal(true)}>
+              ➕ Create Course
+            </button>
+          )}
+          <button className="btn btn-success" onClick={() => setShowJoinModal(true)}>
+            🎓 Join Course
           </button>
-        ) : (
-          <button className="btn btn-primary" onClick={() => setShowJoinModal(true)}>
-            🔍 Join Course
-          </button>
-        )}
+        </div>
       </div>
 
       {courses.length === 0 ? (
         <div className="empty-state">
           <div className="empty-state-icon">📚</div>
           <div className="empty-state-text">
-            {user.role === 'teacher' 
-              ? 'No courses yet' 
-              : 'Not enrolled in any courses'}
+            No courses yet
           </div>
           <p style={{ fontSize: '0.9rem', marginTop: '0.5rem', marginBottom: '1rem' }}>
             {user.role === 'teacher'
-              ? 'Create your first course to start teaching'
+              ? 'Create a course to teach or join one to learn'
               : 'Join a course with an access code to start learning'}
           </p>
-          <button 
-            className="btn btn-primary"
-            onClick={() => user.role === 'teacher' ? setShowCreateModal(true) : setShowJoinModal(true)}
-          >
-            {user.role === 'teacher' ? '➕ Create Course' : '🔍 Join Course'}
-          </button>
+          <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            {user.role === 'teacher' && (
+              <button className="btn btn-primary" onClick={() => setShowCreateModal(true)}>
+                ➕ Create Course
+              </button>
+            )}
+            <button className="btn btn-success" onClick={() => setShowJoinModal(true)}>
+              🎓 Join Course
+            </button>
+          </div>
         </div>
       ) : (
         <div>
-          {courses.map(course => (
-            <div key={course.id} className="card" onClick={() => setSelectedCourse(course)} style={{ cursor: 'pointer' }}>
-              <div className="card-title">{course.title}</div>
-              {course.description && (
-                <div className="card-description">{course.description}</div>
-              )}
-              <div className="card-footer">
-                <div className="card-meta">
-                  {user.role === 'teacher' ? (
-                    <>
-                      <div>Access Code: <strong>{course.access_code}</strong></div>
-                      <div style={{ fontSize: '0.8rem', marginTop: '0.25rem' }}>
-                        Created {new Date(course.created_at).toLocaleDateString()}
-                      </div>
-                    </>
-                  ) : (
-                    <div>
-                      Enrolled {new Date(course.created_at).toLocaleDateString()}
-                    </div>
-                  )}
+          {courses.map(course => {
+            const isTeacher = course.teacher_id === user.id
+            return (
+              <div key={course.id} className="card" onClick={() => setSelectedCourse(course)} style={{ cursor: 'pointer' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.75rem' }}>
+                  <div className="card-title" style={{ marginBottom: 0 }}>{course.title}</div>
+                  <span className={`badge ${isTeacher ? 'badge-info' : 'badge-success'}`}>
+                    {isTeacher ? '👨‍🏫 Teaching' : '👨‍🎓 Student'}
+                  </span>
                 </div>
-                <button className="btn btn-small btn-primary" onClick={(e) => {
-                  e.stopPropagation()
-                  setSelectedCourse(course)
-                }}>
-                  View →
-                </button>
+                {course.description && (
+                  <div className="card-description">{course.description}</div>
+                )}
+                <div className="card-footer">
+                  <div className="card-meta">
+                    {isTeacher ? (
+                      <>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <span>🔑 Code:</span>
+                          <strong style={{ fontSize: '1.1rem', color: 'var(--primary-color)' }}>{course.access_code}</strong>
+                        </div>
+                        <div style={{ fontSize: '0.8rem', marginTop: '0.25rem', color: 'var(--text-secondary)' }}>
+                          Created {new Date(course.created_at).toLocaleDateString()}
+                        </div>
+                      </>
+                    ) : (
+                      <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                        📅 Enrolled {new Date(course.created_at).toLocaleDateString()}
+                      </div>
+                    )}
+                  </div>
+                  <button className="btn btn-small btn-primary" onClick={(e) => {
+                    e.stopPropagation()
+                    setSelectedCourse(course)
+                  }}>
+                    Open →
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 

@@ -213,3 +213,5 @@ Start creating courses and invite your students. Happy teaching! 📚✨
 
 **Need help?** Check the other documentation files or the code comments.
 
+
+

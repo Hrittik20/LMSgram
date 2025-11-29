@@ -67,10 +67,26 @@ function App() {
 
   if (loading) {
     return (
-      <div className="app">
+      <div className="app" style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #667eea15 0%, #764ba215 100%)'
+      }}>
         <div className="loading">
           <div className="spinner"></div>
-          <p style={{ marginTop: '1rem' }}>Loading...</p>
+          <p style={{ 
+            marginTop: '1.5rem', 
+            fontSize: '1.1rem', 
+            fontWeight: '600',
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text'
+          }}>
+            Loading your workspace...
+          </p>
         </div>
       </div>
     )
@@ -78,9 +94,31 @@ function App() {
 
   if (!user) {
     return (
-      <div className="app">
-        <div className="empty-state">
-          <p>Error loading user data. Please restart the app.</p>
+      <div className="app" style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        minHeight: '100vh' 
+      }}>
+        <div style={{
+          textAlign: 'center',
+          padding: '2rem',
+          background: 'var(--card-bg)',
+          borderRadius: '20px',
+          boxShadow: 'var(--shadow-lg)',
+          maxWidth: '400px',
+          margin: '1rem'
+        }}>
+          <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>⚠️</div>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '0.75rem', color: 'var(--text-primary)' }}>
+            Unable to Load
+          </h2>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
+            Error loading user data. Please restart the app.
+          </p>
+          <button className="btn btn-primary" onClick={() => window.location.reload()}>
+            🔄 Reload App
+          </button>
         </div>
       </div>
     )
@@ -89,12 +127,30 @@ function App() {
   return (
     <div className="app">
       <header className="header">
-        <h1>🎓 LMS</h1>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h1 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
+            <span style={{ 
+              fontSize: '2rem',
+              filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))'
+            }}>🎓</span>
+            <span style={{ letterSpacing: '-0.5px' }}>LMS</span>
+          </h1>
+        </div>
         <div className="user-info">
-          <span>{user.role === 'teacher' ? '👨‍🏫' : '👨‍🎓'}</span>
-          <span>{user.first_name} {user.last_name}</span>
-          <span>•</span>
-          <span style={{ textTransform: 'capitalize' }}>{user.role}</span>
+          <span style={{ fontSize: '1.1rem' }}>
+            {user.role === 'teacher' ? '👨‍🏫' : '👨‍🎓'}
+          </span>
+          <span style={{ fontWeight: '600' }}>{user.first_name} {user.last_name}</span>
+          <span style={{ opacity: 0.7 }}>•</span>
+          <span style={{ 
+            textTransform: 'capitalize',
+            fontSize: '0.85rem',
+            padding: '0.25rem 0.5rem',
+            background: 'rgba(255, 255, 255, 0.2)',
+            borderRadius: '8px'
+          }}>
+            {user.role}
+          </span>
         </div>
       </header>
 

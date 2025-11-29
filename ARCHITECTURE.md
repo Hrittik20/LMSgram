@@ -384,3 +384,5 @@ User                     Frontend              Multer              Server       
 
 This architecture provides a solid foundation that can scale from a small classroom to a large educational institution.
 
+
+
