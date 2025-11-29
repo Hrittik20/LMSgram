@@ -1,64 +1,93 @@
-# Telegram LMS Mini App 🎓
+# 🎓 LMSgram - Telegram Learning Management System
 
-A modern Learning Management System (LMS) built as a Telegram Mini App - an easy alternative to Google Classroom.
+A modern, full-featured Learning Management System built as a Telegram Mini App. Create courses, manage assignments, share materials, and engage students - all within Telegram!
 
-## Features
+![Status](https://img.shields.io/badge/status-active-success.svg)
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
-### For Teachers 👨‍🏫
-- Create and manage courses
-- Post assignments with deadlines
-- Grade student submissions
-- Share announcements
-- Upload course materials
-- View student progress
+## 🌟 Live Demo
+**Telegram Bot**: [@YourBotName](https://t.me/your_bot_name)  
+**Web App**: [lmsgram.vercel.app](https://lmsgram.vercel.app)
 
-### For Students 👨‍🎓
-- Join courses with access codes
-- View and submit assignments
-- Track grades and feedback
-- Receive notifications
-- Download course materials
-- View announcements
+## ✨ Features
 
-## Tech Stack
+### For Teachers
+- 📚 **Create Courses** - Organize content with descriptions and access codes
+- 📝 **Assign Work** - Create assignments with due dates
+- 📊 **Grade Submissions** - Review and grade student work
+- 📢 **Announcements** - Broadcast updates to entire class
+- 📁 **Upload Materials** - Share PDFs, documents, and resources
+- 🎓 **Dual Role** - Join other courses as a student
 
-- **Backend**: Node.js + Express
-- **Database**: SQLite
-- **Bot**: node-telegram-bot-api
-- **Frontend**: React + Vite
-- **UI**: Modern, responsive design with Telegram theme integration
+### For Students
+- 🔍 **Join Courses** - Enter access code to enroll
+- 📝 **Submit Assignments** - Upload work directly
+- 📚 **Access Materials** - View and download course resources
+- 🔔 **Real-time Notifications** - Get updates via Telegram
+- 📊 **Track Progress** - View grades and pending work
 
-## Setup Instructions
+### UI/UX
+- 🎨 Modern gradient design with smooth animations
+- 📱 Mobile-first responsive interface
+- ⚡ Fast and lightweight
+- 🌓 Telegram theme integration
+- ✨ Intuitive navigation
 
-### 1. Prerequisites
-- Node.js (v16 or higher)
-- npm or yarn
-- Telegram Bot Token (get from [@BotFather](https://t.me/botfather))
+## 🚀 Tech Stack
 
-### 2. Installation
+**Frontend:**
+- React 18 + Vite
+- Axios for API calls
+- Telegram WebApp SDK
+- Modern CSS with animations
 
+**Backend:**
+- Node.js + Express
+- SQLite database
+- Telegram Bot API
+- Multer for file uploads
+
+**Deployment:**
+- Frontend: Vercel
+- Backend: Render
+- Bot: Telegram
+
+## 📦 Quick Setup
+
+### 1. Clone Repository
 ```bash
-# Install backend dependencies
+git clone https://github.com/yourusername/TgBot.git
+cd TgBot
+```
+
+### 2. Install Dependencies
+```bash
+# Backend
 npm install
 
-# Install frontend dependencies
+# Frontend
 cd frontend
 npm install
 cd ..
 ```
 
-### 3. Configuration
-
-```bash
-# Copy environment file
-cp .env.example .env
-
-# Edit .env and add your Telegram Bot Token
+### 3. Configure Environment
+Create `.env` file:
+```env
+TELEGRAM_BOT_TOKEN=your_bot_token_from_botfather
+WEBAPP_URL=http://localhost:5173
+FRONTEND_URL=http://localhost:5173
+PORT=3000
+NODE_ENV=development
 ```
 
-### 4. Running the Application
+### 4. Create Telegram Bot
+1. Message [@BotFather](https://t.me/BotFather)
+2. Send `/newbot` and follow instructions
+3. Copy your bot token to `.env`
+4. Set menu button: `/mybots` → Your Bot → Menu Button → Set URL to `http://localhost:5173`
 
-**Development Mode:**
+### 5. Run Development
 ```bash
 # Terminal 1 - Backend
 npm run dev
@@ -68,70 +97,75 @@ cd frontend
 npm run dev
 ```
 
-**Production Mode:**
-```bash
-# Build frontend
-npm run build
+Visit `http://localhost:5173` or open your bot in Telegram!
 
-# Start server
-npm start
-```
+## 🌐 Production Deployment
 
-### 5. Create Your Bot
+### Backend (Render)
+1. Push code to GitHub
+2. Go to [Render](https://render.com) → New Web Service
+3. Connect your repository
+4. Add environment variables
+5. Deploy
 
-1. Open Telegram and search for [@BotFather](https://t.me/botfather)
-2. Send `/newbot` and follow instructions
-3. Copy the bot token to `.env`
-4. Set up the mini app with `/newapp`
-5. Link it to your bot and provide the webapp URL
+### Frontend (Vercel)
+1. Go to [Vercel](https://vercel.com) → New Project
+2. Import your repository
+3. Set Root Directory to `frontend`
+4. Add environment variable: `VITE_API_URL=https://your-render-url.onrender.com/api`
+5. Deploy
 
-## Usage
+### Update Bot
+Message @BotFather → `/mybots` → Your Bot → Menu Button → Update URL to your Vercel deployment
 
-1. Start the bot in Telegram
-2. Use `/start` command to initialize
-3. Click "Open LMS" button to launch the mini app
-4. Teachers can create courses, students can join with access codes
-
-## Project Structure
-
+## 📁 Project Structure
 ```
 TgBot/
-├── server.js           # Main server file
-├── bot.js              # Telegram bot logic
-├── database.js         # Database setup and queries
-├── routes/             # API routes
+├── frontend/          # React frontend
+│   ├── src/
+│   │   ├── components/  # UI components
+│   │   ├── App.jsx      # Main app
+│   │   └── index.css    # Styles
+│   └── package.json
+├── routes/            # API routes
+│   ├── users.js
 │   ├── courses.js
 │   ├── assignments.js
-│   └── users.js
-├── uploads/            # File uploads
-├── frontend/           # React mini app
-│   ├── src/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   └── App.jsx
-│   └── package.json
+│   └── ...
+├── bot.js            # Telegram bot logic
+├── database.js       # Database queries
+├── server.js         # Express server
 └── package.json
 ```
 
-## API Endpoints
+## 🔑 Environment Variables
 
-### Courses
-- `GET /api/courses` - Get all courses for user
-- `POST /api/courses` - Create new course
-- `POST /api/courses/:id/join` - Join course with code
+**Backend (Render):**
+```
+TELEGRAM_BOT_TOKEN=your_token
+WEBAPP_URL=https://your-frontend.vercel.app
+FRONTEND_URL=https://your-frontend.vercel.app
+NODE_ENV=production
+```
 
-### Assignments
-- `GET /api/courses/:id/assignments` - Get course assignments
-- `POST /api/assignments` - Create assignment
-- `POST /api/assignments/:id/submit` - Submit assignment
+**Frontend (Vercel):**
+```
+VITE_API_URL=https://your-backend.onrender.com/api
+```
 
-### Users
-- `GET /api/user/:telegramId` - Get user info
-- `PUT /api/user/:telegramId` - Update user profile
+## 🤝 Contributing
+Contributions are welcome! Feel free to submit issues and pull requests.
 
-## License
+## 📄 License
+MIT License - feel free to use this project for learning or commercial purposes.
 
-MIT
+## 🆘 Support
+- **Issues**: [GitHub Issues](https://github.com/yourusername/TgBot/issues)
+- **Telegram**: [@YourUsername](https://t.me/yourusername)
 
+## 🙏 Acknowledgments
+Built with ❤️ using Telegram Mini Apps, React, and Node.js
 
+---
 
+⭐ Star this repo if you find it helpful!
