@@ -143,9 +143,16 @@ function Courses({ user }) {
         <CreateCourseModal
           user={user}
           onClose={() => setShowCreateModal(false)}
-          onSuccess={() => {
+          onSuccess={async () => {
             setShowCreateModal(false)
-            loadCourses()
+            await loadCourses()
+            // Auto-select the newly created course if it's the first one
+            if (courses.length === 0) {
+              const updatedCourses = await axios.get(`${API_BASE_URL}/courses?telegram_id=${user.telegram_id}`)
+              if (updatedCourses.data.length > 0) {
+                setSelectedCourse(updatedCourses.data[0])
+              }
+            }
           }}
         />
       )}

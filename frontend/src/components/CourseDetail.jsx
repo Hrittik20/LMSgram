@@ -39,7 +39,18 @@ function CourseDetail({ course, user, onBack, onUpdate }) {
       setMaterials(materialsRes.data)
       setStudents(studentsRes.data)
       setTeachers(teachersRes.data)
-      setIsCourseTeacher(teachersRes.data.some(t => t.id === user.id) || course.teacher_id === user.id)
+      
+      // Check if user is a teacher of this course
+      const isTeacher = teachersRes.data.some(t => t.id === user.id) || 
+                       (user.role === 'teacher' && teachersRes.data.length === 0) // If no teachers yet and user is teacher, they're likely the creator
+      setIsCourseTeacher(isTeacher)
+      
+      console.log('Course teacher check:', {
+        userId: user.id,
+        userRole: user.role,
+        teachers: teachersRes.data.map(t => ({ id: t.id, name: `${t.first_name} ${t.last_name}` })),
+        isCourseTeacher: isTeacher
+      })
     } catch (error) {
       console.error('Error loading course data:', error)
     } finally {
@@ -90,13 +101,30 @@ function CourseDetail({ course, user, onBack, onUpdate }) {
             </div>
           </div>
           
-          {isCourseTeacher && (
-            <div className="access-code-box">
+          {(isCourseTeacher || user.role === 'teacher') && course.access_code && (
+            <div className="access-code-box" style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '1rem',
+              padding: '1rem',
+              background: 'linear-gradient(135deg, var(--primary-50), var(--neutral-50))',
+              border: '2px dashed var(--primary-300)',
+              borderRadius: 'var(--radius-md)',
+              marginTop: '1rem'
+            }}>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--neutral-500)', marginBottom: '0.25rem' }}>
-                  ACCESS CODE
+                <div style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--neutral-500)', marginBottom: '0.25rem', textTransform: 'uppercase' }}>
+                  Access Code
                 </div>
-                <div className="access-code-value">{course.access_code}</div>
+                <div style={{ 
+                  fontSize: '1.3rem', 
+                  fontWeight: '700', 
+                  fontFamily: 'monospace', 
+                  letterSpacing: '3px', 
+                  color: 'var(--primary-700)' 
+                }}>
+                  {course.access_code}
+                </div>
               </div>
               <div style={{ fontSize: '0.8rem', color: 'var(--neutral-500)', maxWidth: '140px' }}>
                 Share with students to let them join
@@ -122,10 +150,24 @@ function CourseDetail({ course, user, onBack, onUpdate }) {
       {/* Tab Content */}
       {activeTab === 'assignments' && (
         <div className="fade-in">
-          {isCourseTeacher && (
+          {(isCourseTeacher || (user.role === 'teacher' && loading === false)) && (
             <button 
               className="btn btn-primary mb-lg" 
               onClick={() => setShowCreateAssignment(true)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.75rem 1.25rem',
+                fontSize: '0.95rem',
+                fontWeight: '600',
+                backgroundColor: '#3378ff',
+                color: 'white',
+                border: 'none',
+                borderRadius: '10px',
+                cursor: 'pointer',
+                marginBottom: '1.5rem'
+              }}
             >
               ➕ Create Assignment
             </button>
@@ -184,10 +226,24 @@ function CourseDetail({ course, user, onBack, onUpdate }) {
 
       {activeTab === 'announcements' && (
         <div className="fade-in">
-          {isCourseTeacher && (
+          {(isCourseTeacher || (user.role === 'teacher' && loading === false)) && (
             <button 
               className="btn btn-primary mb-lg" 
               onClick={() => setShowCreateAnnouncement(true)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.75rem 1.25rem',
+                fontSize: '0.95rem',
+                fontWeight: '600',
+                backgroundColor: '#3378ff',
+                color: 'white',
+                border: 'none',
+                borderRadius: '10px',
+                cursor: 'pointer',
+                marginBottom: '1.5rem'
+              }}
             >
               ➕ Post Announcement
             </button>
@@ -228,10 +284,24 @@ function CourseDetail({ course, user, onBack, onUpdate }) {
 
       {activeTab === 'materials' && (
         <div className="fade-in">
-          {isCourseTeacher && (
+          {(isCourseTeacher || (user.role === 'teacher' && loading === false)) && (
             <button 
               className="btn btn-primary mb-lg" 
               onClick={() => setShowUploadMaterial(true)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.75rem 1.25rem',
+                fontSize: '0.95rem',
+                fontWeight: '600',
+                backgroundColor: '#3378ff',
+                color: 'white',
+                border: 'none',
+                borderRadius: '10px',
+                cursor: 'pointer',
+                marginBottom: '1.5rem'
+              }}
             >
               ⬆️ Upload Material
             </button>

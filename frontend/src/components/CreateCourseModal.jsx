@@ -23,11 +23,17 @@ function CreateCourseModal({ user, onClose, onSuccess }) {
     setLoading(true)
 
     try {
-      await axios.post(`${API_BASE_URL}/courses`, {
+      const response = await axios.post(`${API_BASE_URL}/courses`, {
         title: formData.title,
         description: formData.description,
         telegram_id: user.telegram_id
       })
+      
+      // Show success message with access code
+      if (response.data && response.data.access_code) {
+        alert(`✅ Course created successfully!\n\nAccess Code: ${response.data.access_code}\n\nShare this code with students to let them join.`)
+      }
+      
       onSuccess()
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to create course')
