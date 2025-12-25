@@ -10,7 +10,7 @@ function Dashboard({ user }) {
     courses: 0,
     assignments: 0,
     upcomingAssignments: 0,
-    pendingSubmissions: 0
+    submittedCount: 0
   })
   const [loading, setLoading] = useState(true)
   const [recentCourses, setRecentCourses] = useState([])
@@ -28,6 +28,7 @@ function Dashboard({ user }) {
       setRecentCourses(courses.slice(0, 3))
       
       let allAssignments = []
+      let submittedCount = 0
       const today = new Date()
       
       for (const course of courses) {
@@ -43,6 +44,16 @@ function Dashboard({ user }) {
           ]
         } catch (err) {
           console.error('Error loading assignments:', err)
+        }
+      }
+
+      // Get submissions for student
+      if (user.role === 'student') {
+        try {
+          const submissionsRes = await axios.get(`${API_BASE_URL}/submissions/user/${user.telegram_id}`)
+          submittedCount = submissionsRes.data?.length || 0
+        } catch (err) {
+          console.log('Could not fetch submissions')
         }
       }
 
@@ -67,7 +78,7 @@ function Dashboard({ user }) {
         courses: courses.length,
         assignments: allAssignments.length,
         upcomingAssignments: upcomingCount,
-        pendingSubmissions: 0
+        submittedCount: submittedCount
       })
     } catch (error) {
       console.error('Error loading dashboard:', error)
@@ -78,25 +89,9 @@ function Dashboard({ user }) {
 
   if (loading) {
     return (
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '100vh',
-        gap: '16px',
-        backgroundColor: '#ffffff'
-      }}>
-        <div style={{
-          width: '40px',
-          height: '40px',
-          border: '3px solid #e5e7eb',
-          borderTopColor: '#3378ff',
-          borderRadius: '50%',
-          animation: 'spin 0.8s linear infinite'
-        }}></div>
-        <div style={{ color: '#6b7280', fontSize: '0.9rem' }}>Loading...</div>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <div className="loading">
+        <div className="spinner"></div>
+        <div className="loading-text">Loading...</div>
       </div>
     )
   }
@@ -108,95 +103,62 @@ function Dashboard({ user }) {
     return 'Good evening'
   }
 
-  const statCardStyle = (bgColor = '#eef5ff') => ({
-    backgroundColor: bgColor,
-    borderRadius: '14px',
-    padding: '16px',
-    cursor: 'pointer',
-    textAlign: 'center'
-  })
-
-  const quickActionStyle = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    width: '100%',
-    padding: '14px',
-    backgroundColor: '#ffffff',
-    border: '1px solid #e5e7eb',
-    borderRadius: '12px',
-    cursor: 'pointer',
-    textAlign: 'left'
-  }
-
   return (
-    <div style={{
-      padding: '16px',
-      paddingBottom: '90px',
-      maxWidth: '600px',
-      margin: '0 auto',
-      backgroundColor: '#ffffff',
-      minHeight: '100vh'
-    }}>
+    <div className="page fade-in">
       {/* Welcome Section */}
-      <div style={{ marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '1.75rem', fontWeight: '800', margin: 0, color: '#111827' }}>
+      <div className="page-header">
+        <div className="page-title">
           {greeting()}{user.first_name ? `, ${user.first_name}` : ''}! 👋
-        </h1>
-        <p style={{ fontSize: '0.9rem', color: '#6b7280', margin: '4px 0 0 0' }}>
+        </div>
+        <div className="page-subtitle">
           {user.role === 'teacher' 
             ? 'Manage your courses and track student progress' 
             : 'Keep track of your learning journey'}
-        </p>
+        </div>
       </div>
 
       {/* Stats Grid */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(2, 1fr)', 
-        gap: '12px',
-        marginBottom: '24px'
-      }}>
-        <div style={statCardStyle('#eef5ff')} onClick={() => navigate('/courses')}>
-          <div style={{ fontSize: '1.5rem', marginBottom: '4px' }}>📚</div>
-          <div style={{ fontSize: '1.75rem', fontWeight: '700', color: '#111827' }}>{stats.courses}</div>
-          <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>Courses</div>
+      <div className="stats-grid">
+        <div className="stat-card" onClick={() => navigate('/courses')}>
+          <div className="stat-icon">📚</div>
+          <div className="stat-value">{stats.courses}</div>
+          <div className="stat-label">Courses</div>
         </div>
         
-        <div style={statCardStyle('#fef3c7')} onClick={() => navigate('/assignments')}>
-          <div style={{ fontSize: '1.5rem', marginBottom: '4px' }}>📝</div>
-          <div style={{ fontSize: '1.75rem', fontWeight: '700', color: '#111827' }}>{stats.assignments}</div>
-          <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>Assignments</div>
+        <div className="stat-card" onClick={() => navigate('/assignments')}>
+          <div className="stat-icon">📝</div>
+          <div className="stat-value">{stats.assignments}</div>
+          <div className="stat-label">Assignments</div>
         </div>
 
         {user.role === 'student' && (
           <>
-            <div style={statCardStyle('#fef3c7')} onClick={() => navigate('/assignments')}>
-              <div style={{ fontSize: '1.5rem', marginBottom: '4px' }}>⏰</div>
-              <div style={{ fontSize: '1.75rem', fontWeight: '700', color: '#111827' }}>{stats.upcomingAssignments}</div>
-              <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>Upcoming</div>
+            <div className="stat-card stat-card-warning" onClick={() => navigate('/assignments')}>
+              <div className="stat-icon">⏰</div>
+              <div className="stat-value">{stats.upcomingAssignments}</div>
+              <div className="stat-label">Upcoming</div>
             </div>
             
-            <div style={statCardStyle('#d1fae5')}>
-              <div style={{ fontSize: '1.5rem', marginBottom: '4px' }}>✅</div>
-              <div style={{ fontSize: '1.75rem', fontWeight: '700', color: '#111827' }}>{stats.assignments - stats.upcomingAssignments}</div>
-              <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>Completed</div>
+            <div className="stat-card stat-card-success">
+              <div className="stat-icon">✅</div>
+              <div className="stat-value">{stats.submittedCount}</div>
+              <div className="stat-label">Submitted</div>
             </div>
           </>
         )}
 
         {user.role === 'teacher' && (
           <>
-            <div style={statCardStyle('#d1fae5')}>
-              <div style={{ fontSize: '1.5rem', marginBottom: '4px' }}>👥</div>
-              <div style={{ fontSize: '1.75rem', fontWeight: '700', color: '#111827' }}>-</div>
-              <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>Students</div>
+            <div className="stat-card stat-card-success">
+              <div className="stat-icon">👥</div>
+              <div className="stat-value">-</div>
+              <div className="stat-label">Students</div>
             </div>
             
-            <div style={statCardStyle('#fef3c7')}>
-              <div style={{ fontSize: '1.5rem', marginBottom: '4px' }}>📊</div>
-              <div style={{ fontSize: '1.75rem', fontWeight: '700', color: '#111827' }}>-</div>
-              <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>To Grade</div>
+            <div className="stat-card stat-card-warning">
+              <div className="stat-icon">📊</div>
+              <div className="stat-value">-</div>
+              <div className="stat-label">To Grade</div>
             </div>
           </>
         )}
@@ -204,69 +166,31 @@ function Dashboard({ user }) {
 
       {/* Upcoming Tasks */}
       {user.role === 'student' && upcomingTasks.length > 0 && (
-        <div style={{ marginBottom: '24px' }}>
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center',
-            marginBottom: '12px'
-          }}>
-            <h2 style={{ fontSize: '1.1rem', fontWeight: '700', margin: 0, color: '#111827' }}>
-              📌 Upcoming Tasks
-            </h2>
-            <button 
-              onClick={() => navigate('/assignments')}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#3378ff',
-                fontSize: '0.9rem',
-                fontWeight: '500',
-                cursor: 'pointer'
-              }}
-            >
+        <div className="section">
+          <div className="section-header">
+            <div className="section-title">📌 Upcoming Tasks</div>
+            <button className="btn btn-ghost btn-sm" onClick={() => navigate('/assignments')}>
               View All →
             </button>
           </div>
           
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div className="flex flex-col gap-sm">
             {upcomingTasks.map(task => (
               <div 
                 key={task.id} 
+                className="assignment-card"
                 onClick={() => navigate('/assignments')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '12px',
-                  backgroundColor: '#fffbeb',
-                  border: '1px solid #fde68a',
-                  borderRadius: '12px',
-                  cursor: 'pointer'
-                }}
               >
-                <div style={{
-                  width: '40px',
-                  height: '40px',
-                  background: 'rgba(245, 158, 11, 0.15)',
-                  borderRadius: '10px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.2rem'
-                }}>
-                  📝
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: '600', color: '#111827', marginBottom: '2px' }}>{task.title}</div>
-                  <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>{task.courseName}</div>
+                <div className="assignment-icon">📝</div>
+                <div className="assignment-info">
+                  <div className="assignment-title">{task.title}</div>
+                  <div className="assignment-course">{task.courseName}</div>
                   {task.due_date && (
-                    <div style={{ fontSize: '0.75rem', color: '#f59e0b', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <div className="assignment-due">
                       ⏰ Due {new Date(task.due_date).toLocaleDateString()}
                     </div>
                   )}
                 </div>
-                <span style={{ color: '#9ca3af', fontSize: '1.25rem' }}>→</span>
               </div>
             ))}
           </div>
@@ -275,74 +199,30 @@ function Dashboard({ user }) {
 
       {/* Recent Courses */}
       {recentCourses.length > 0 && (
-        <div style={{ marginBottom: '24px' }}>
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center',
-            marginBottom: '12px'
-          }}>
-            <h2 style={{ fontSize: '1.1rem', fontWeight: '700', margin: 0, color: '#111827' }}>
-              📚 Your Courses
-            </h2>
-            <button 
-              onClick={() => navigate('/courses')}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#3378ff',
-                fontSize: '0.9rem',
-                fontWeight: '500',
-                cursor: 'pointer'
-              }}
-            >
+        <div className="section">
+          <div className="section-header">
+            <div className="section-title">📚 Your Courses</div>
+            <button className="btn btn-ghost btn-sm" onClick={() => navigate('/courses')}>
               View All →
             </button>
           </div>
           
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div className="course-grid">
             {recentCourses.map(course => (
               <div 
                 key={course.id} 
+                className="course-card"
                 onClick={() => navigate('/courses')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '12px',
-                  backgroundColor: '#ffffff',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '12px',
-                  cursor: 'pointer'
-                }}
               >
-                <div style={{
-                  width: '40px',
-                  height: '40px',
-                  background: '#eef5ff',
-                  borderRadius: '10px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.2rem'
-                }}>
-                  📖
+                <div className="course-card-header">
+                  <div className="course-card-icon">📖</div>
+                  <div className="course-card-info">
+                    <div className="course-card-title">{course.title}</div>
+                    {course.description && (
+                      <div className="course-card-desc">{course.description}</div>
+                    )}
+                  </div>
                 </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: '600', color: '#111827' }}>{course.title}</div>
-                  {course.description && (
-                    <div style={{ 
-                      fontSize: '0.8rem', 
-                      color: '#6b7280',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap'
-                    }}>
-                      {course.description}
-                    </div>
-                  )}
-                </div>
-                <span style={{ color: '#9ca3af', fontSize: '1.25rem' }}>→</span>
               </div>
             ))}
           </div>
@@ -350,93 +230,45 @@ function Dashboard({ user }) {
       )}
 
       {/* Quick Actions */}
-      <div style={{ marginBottom: '24px' }}>
-        <h2 style={{ fontSize: '1.1rem', fontWeight: '700', margin: '0 0 12px 0', color: '#111827' }}>
-          ⚡ Quick Actions
-        </h2>
+      <div className="quick-actions">
+        <button className="quick-action-btn" onClick={() => navigate('/courses')}>
+          <div className="quick-action-icon">📚</div>
+          <div className="quick-action-text">
+            <div className="quick-action-title">
+              {user.role === 'teacher' ? 'Manage Courses' : 'Browse Courses'}
+            </div>
+            <div className="quick-action-desc">
+              {user.role === 'teacher' ? 'Create and manage' : 'View enrolled courses'}
+            </div>
+          </div>
+          <span className="quick-action-arrow">→</span>
+        </button>
         
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <button style={quickActionStyle} onClick={() => navigate('/courses')}>
-            <div style={{
-              width: '44px',
-              height: '44px',
-              background: '#eef5ff',
-              borderRadius: '10px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '1.3rem',
-              flexShrink: 0
-            }}>
-              📚
+        <button className="quick-action-btn" onClick={() => navigate('/assignments')}>
+          <div className="quick-action-icon">📝</div>
+          <div className="quick-action-text">
+            <div className="quick-action-title">
+              {user.role === 'teacher' ? 'Grade Submissions' : 'View Assignments'}
             </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: '600', color: '#111827', marginBottom: '2px' }}>
-                {user.role === 'teacher' ? 'Manage Courses' : 'Browse Courses'}
-              </div>
-              <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>
-                {user.role === 'teacher' ? 'Create and manage' : 'View enrolled courses'}
-              </div>
+            <div className="quick-action-desc">
+              {user.role === 'teacher' ? 'Review student work' : 'Check pending tasks'}
             </div>
-            <span style={{ color: '#9ca3af', fontSize: '1.25rem' }}>→</span>
-          </button>
-          
-          <button style={quickActionStyle} onClick={() => navigate('/assignments')}>
-            <div style={{
-              width: '44px',
-              height: '44px',
-              background: 'rgba(245, 158, 11, 0.15)',
-              borderRadius: '10px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '1.3rem',
-              flexShrink: 0
-            }}>
-              📝
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: '600', color: '#111827', marginBottom: '2px' }}>
-                {user.role === 'teacher' ? 'Grade Submissions' : 'View Assignments'}
-              </div>
-              <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>
-                {user.role === 'teacher' ? 'Review student work' : 'Check pending tasks'}
-              </div>
-            </div>
-            <span style={{ color: '#9ca3af', fontSize: '1.25rem' }}>→</span>
-          </button>
-        </div>
+          </div>
+          <span className="quick-action-arrow">→</span>
+        </button>
       </div>
 
       {/* Empty State */}
       {stats.courses === 0 && (
-        <div style={{
-          textAlign: 'center',
-          padding: '48px 24px',
-          color: '#6b7280'
-        }}>
-          <div style={{ fontSize: '4rem', marginBottom: '16px', opacity: 0.6 }}>🎓</div>
-          <div style={{ fontSize: '1.25rem', fontWeight: '600', color: '#111827', marginBottom: '8px' }}>
-            Welcome to LMS!
-          </div>
-          <div style={{ fontSize: '0.9rem', marginBottom: '24px' }}>
+        <div className="empty-state mt-xl">
+          <div className="empty-state-icon">🎓</div>
+          <div className="empty-state-title">Welcome to LMS!</div>
+          <div className="empty-state-text">
             {user.role === 'teacher' 
               ? 'Create your first course to get started'
               : 'Join a course using an access code'}
           </div>
-          <button 
-            onClick={() => navigate('/courses')}
-            style={{
-              padding: '14px 24px',
-              backgroundColor: '#3378ff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '10px',
-              fontSize: '1rem',
-              fontWeight: '600',
-              cursor: 'pointer'
-            }}
-          >
+          <button className="btn btn-primary btn-lg mt-md" onClick={() => navigate('/courses')}>
             {user.role === 'teacher' ? '➕ Create Course' : '🔗 Join Course'}
           </button>
         </div>

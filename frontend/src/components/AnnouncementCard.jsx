@@ -20,7 +20,7 @@ function AnnouncementCard({ announcement, user, onUpdate }) {
     try {
       setCommentLoading(true)
       const res = await axios.get(`${API_BASE_URL}/comments/announcement/${announcement.id}`)
-      setComments(res.data)
+      setComments(res.data || [])
     } catch (error) {
       console.error('Error loading comments:', error)
     } finally {
@@ -80,226 +80,79 @@ function AnnouncementCard({ announcement, user, onUpdate }) {
   }
 
   return (
-    <div style={{
-      backgroundColor: '#ffffff',
-      border: '1px solid #e5e7eb',
-      borderRadius: '14px',
-      overflow: 'hidden',
-      marginBottom: '16px'
-    }}>
+    <div className="announcement-card">
       {/* Announcement Content */}
-      <div style={{
-        padding: '16px',
-        borderLeft: '4px solid #f59e0b'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-          <div style={{ 
-            width: '36px', 
-            height: '36px', 
-            background: 'rgba(245, 158, 11, 0.15)',
-            borderRadius: '10px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '1.1rem',
-            flexShrink: 0
-          }}>
-            📢
-          </div>
+      <div className="announcement-header">
+        <div className="flex gap-md">
+          <div className="card-icon card-icon-warning">📢</div>
           <div style={{ flex: 1 }}>
-            <div style={{ 
-              fontSize: '1.05rem', 
-              fontWeight: '700', 
-              color: '#111827',
-              marginBottom: '8px' 
-            }}>
-              {announcement.title}
-            </div>
-            <div style={{ 
-              fontSize: '0.9rem', 
-              color: '#4b5563',
-              lineHeight: 1.6,
-              whiteSpace: 'pre-wrap'
-            }}>
-              {announcement.content}
-            </div>
-            <div style={{ 
-              fontSize: '0.8rem', 
-              color: '#9ca3af',
-              marginTop: '12px' 
-            }}>
-              📅 {formatDate(announcement.created_at)}
-            </div>
+            <div className="announcement-title">{announcement.title}</div>
+            <div className="announcement-content">{announcement.content}</div>
+            <div className="announcement-meta">📅 {formatDate(announcement.created_at)}</div>
           </div>
         </div>
       </div>
 
       {/* Comments Toggle */}
-      <div style={{
-        padding: '12px 16px',
-        backgroundColor: '#f9fafb',
-        borderTop: '1px solid #f3f4f6'
-      }}>
-        <button 
-          onClick={() => setShowComments(!showComments)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            background: 'none',
-            border: 'none',
-            color: '#6b7280',
-            fontSize: '0.85rem',
-            fontWeight: '500',
-            cursor: 'pointer',
-            padding: 0
-          }}
-        >
+      <div className="announcement-footer">
+        <button className="comments-toggle" onClick={() => setShowComments(!showComments)}>
           <span>💬</span>
           <span>{showComments ? 'Hide' : 'Show'} Comments</span>
-          {comments.length > 0 && (
-            <span style={{
-              backgroundColor: '#eef5ff',
-              color: '#3378ff',
-              padding: '2px 8px',
-              borderRadius: '999px',
-              fontSize: '0.7rem',
-              fontWeight: '600'
-            }}>
-              {comments.length}
-            </span>
-          )}
+          {comments.length > 0 && <span className="badge badge-primary">{comments.length}</span>}
         </button>
       </div>
 
       {/* Comments Section */}
       {showComments && (
-        <div style={{
-          padding: '16px',
-          backgroundColor: '#f9fafb'
-        }}>
+        <div className="comments-section fade-in">
           {commentLoading ? (
-            <div style={{ textAlign: 'center', padding: '16px', color: '#6b7280' }}>
+            <div className="text-center text-muted" style={{ padding: '1rem' }}>
               Loading comments...
             </div>
           ) : comments.length === 0 ? (
-            <div style={{ 
-              textAlign: 'center', 
-              padding: '16px', 
-              color: '#6b7280',
-              fontSize: '0.9rem'
-            }}>
+            <div className="text-center text-muted" style={{ padding: '1rem' }}>
               No comments yet. Be the first to comment!
             </div>
           ) : (
-            <div style={{ marginBottom: '16px' }}>
+            <div className="mb-md">
               {comments.map(comment => (
-                <div 
-                  key={comment.id} 
-                  style={{
-                    padding: '12px',
-                    backgroundColor: '#ffffff',
-                    borderRadius: '10px',
-                    marginBottom: '8px',
-                    borderLeft: '3px solid #3378ff'
-                  }}
-                >
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'space-between',
-                    marginBottom: '4px'
-                  }}>
-                    <div style={{ 
-                      fontSize: '0.85rem', 
-                      fontWeight: '600',
-                      color: '#111827'
-                    }}>
+                <div key={comment.id} className="comment-item">
+                  <div className="comment-header">
+                    <div className="comment-author">
                       {comment.first_name} {comment.last_name || ''}
                       {comment.role === 'teacher' && (
-                        <span style={{
-                          marginLeft: '8px',
-                          backgroundColor: '#eef5ff',
-                          color: '#3378ff',
-                          padding: '2px 6px',
-                          borderRadius: '4px',
-                          fontSize: '0.65rem',
-                          fontWeight: '600',
-                          textTransform: 'uppercase'
-                        }}>
-                          Teacher
-                        </span>
+                        <span className="badge badge-primary teacher-badge">Teacher</span>
                       )}
                     </div>
                     {comment.user_id === user.id && (
                       <button
+                        className="btn btn-icon-only btn-ghost"
                         onClick={() => handleDeleteComment(comment.id)}
-                        style={{ 
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                          fontSize: '0.8rem',
-                          color: '#9ca3af',
-                          padding: '4px'
-                        }}
+                        title="Delete comment"
                       >
                         🗑️
                       </button>
                     )}
                   </div>
-                  <div style={{ 
-                    fontSize: '0.85rem', 
-                    color: '#4b5563',
-                    lineHeight: 1.5
-                  }}>
-                    {comment.content}
-                  </div>
-                  <div style={{ 
-                    fontSize: '0.7rem', 
-                    color: '#9ca3af',
-                    marginTop: '6px'
-                  }}>
-                    {formatDate(comment.created_at)}
-                  </div>
+                  <div className="comment-content">{comment.content}</div>
+                  <div className="comment-time">{formatDate(comment.created_at)}</div>
                 </div>
               ))}
             </div>
           )}
 
-          {/* Comment Form */}
-          <form onSubmit={handleSubmitComment}>
+          {/* Comment Form - Available to everyone */}
+          <form onSubmit={handleSubmitComment} className="comment-form">
             <textarea
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               placeholder="Write a comment..."
               rows="2"
-              style={{
-                width: '100%',
-                minHeight: '70px',
-                padding: '12px',
-                border: '1px solid #e5e7eb',
-                borderRadius: '10px',
-                fontSize: '0.9rem',
-                fontFamily: 'inherit',
-                resize: 'vertical',
-                backgroundColor: '#ffffff',
-                color: '#111827'
-              }}
             />
             <button
               type="submit"
+              className="btn btn-primary btn-sm mt-sm"
               disabled={loading || !newComment.trim()}
-              style={{
-                marginTop: '8px',
-                padding: '10px 16px',
-                backgroundColor: loading || !newComment.trim() ? '#9ca3af' : '#3378ff',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '0.9rem',
-                fontWeight: '600',
-                cursor: loading || !newComment.trim() ? 'not-allowed' : 'pointer'
-              }}
             >
               {loading ? 'Posting...' : '💬 Post Comment'}
             </button>

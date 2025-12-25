@@ -29,69 +29,28 @@ function BottomNav() {
     return location.pathname.startsWith(path)
   }
 
-  const navStyle = {
-    position: 'fixed',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    zIndex: 100,
-    backgroundColor: '#ffffff',
-    borderTop: '1px solid #e5e7eb',
-    padding: '8px 0',
-    paddingBottom: 'calc(8px + env(safe-area-inset-bottom))',
-    boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.08)'
-  }
-
-  const itemsStyle = {
-    display: 'flex',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    maxWidth: '600px',
-    margin: '0 auto'
-  }
-
-  const getButtonStyle = (active) => ({
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: '2px',
-    padding: '8px 16px',
-    background: active ? '#eef5ff' : 'none',
-    border: 'none',
-    color: active ? '#3378ff' : '#9ca3af',
-    fontSize: '0.7rem',
-    fontWeight: active ? '600' : '500',
-    cursor: 'pointer',
-    borderRadius: '10px',
-    transition: 'all 0.15s ease'
-  })
-
-  const iconStyle = {
-    fontSize: '1.5rem'
-  }
-
   return (
-    <nav style={navStyle}>
-      <div style={itemsStyle}>
+    <nav className="bottom-nav">
+      <div className="bottom-nav-items">
         <button 
-          style={getButtonStyle(isActive('/'))}
+          className={`bottom-nav-item ${isActive('/') ? 'active' : ''}`}
           onClick={() => navigate('/')}
         >
-          <span style={iconStyle}>🏠</span>
+          <span className="nav-icon">🏠</span>
           <span>Home</span>
         </button>
         <button 
-          style={getButtonStyle(isActive('/courses'))}
+          className={`bottom-nav-item ${isActive('/courses') ? 'active' : ''}`}
           onClick={() => navigate('/courses')}
         >
-          <span style={iconStyle}>📚</span>
+          <span className="nav-icon">📚</span>
           <span>Courses</span>
         </button>
         <button 
-          style={getButtonStyle(isActive('/assignments'))}
+          className={`bottom-nav-item ${isActive('/assignments') ? 'active' : ''}`}
           onClick={() => navigate('/assignments')}
         >
-          <span style={iconStyle}>📝</span>
+          <span className="nav-icon">📝</span>
           <span>Tasks</span>
         </button>
       </div>

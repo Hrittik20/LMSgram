@@ -34,7 +34,7 @@ function CreateCourseModal({ user, onClose, onSuccess }) {
         alert(`✅ Course created successfully!\n\nAccess Code: ${response.data.access_code}\n\nShare this code with students to let them join.`)
       }
       
-      onSuccess()
+      onSuccess(response.data)
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to create course')
     } finally {

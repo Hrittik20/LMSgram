@@ -1375,6 +1375,7 @@ body {
 .text-primary { color: var(--primary-600); }
 .text-success { color: var(--accent-emerald); }
 .text-danger { color: var(--danger); }
+.text-warning { color: var(--accent-amber); }
 
 .mt-sm { margin-top: var(--spacing-sm); }
 .mt-md { margin-top: var(--spacing-md); }
@@ -1385,6 +1386,8 @@ body {
 .mb-md { margin-bottom: var(--spacing-md); }
 .mb-lg { margin-bottom: var(--spacing-lg); }
 .mb-xl { margin-bottom: var(--spacing-xl); }
+
+.ml-sm { margin-left: var(--spacing-sm); }
 
 .flex { display: flex; }
 .flex-col { flex-direction: column; }

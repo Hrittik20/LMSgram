@@ -16,6 +16,7 @@ function CourseDetail({ course, user, onBack, onUpdate }) {
   const [teachers, setTeachers] = useState([])
   const [isCourseTeacher, setIsCourseTeacher] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [showCreateAssignment, setShowCreateAssignment] = useState(false)
   const [showCreateAnnouncement, setShowCreateAnnouncement] = useState(false)
   const [showUploadMaterial, setShowUploadMaterial] = useState(false)
@@ -25,52 +26,63 @@ function CourseDetail({ course, user, onBack, onUpdate }) {
   }, [course])
 
   const loadCourseData = async () => {
+    setLoading(true)
+    setError(null)
     try {
-      const [assignmentsRes, announcementsRes, materialsRes, studentsRes, teachersRes] = await Promise.all([
+      console.log('Loading course data for:', course.id)
+      
+      const [assignmentsRes, announcementsRes, materialsRes, teachersRes] = await Promise.all([
         axios.get(`${API_BASE_URL}/assignments/course/${course.id}`),
         axios.get(`${API_BASE_URL}/announcements/course/${course.id}`),
         axios.get(`${API_BASE_URL}/materials/course/${course.id}`),
-        user.role === 'teacher' ? axios.get(`${API_BASE_URL}/courses/${course.id}/students`) : Promise.resolve({ data: [] }),
         axios.get(`${API_BASE_URL}/courses/${course.id}/teachers`)
       ])
 
-      setAssignments(assignmentsRes.data)
-      setAnnouncements(announcementsRes.data)
-      setMaterials(materialsRes.data)
-      setStudents(studentsRes.data)
-      setTeachers(teachersRes.data)
+      console.log('Assignments:', assignmentsRes.data)
+      console.log('Announcements:', announcementsRes.data)
+      console.log('Materials:', materialsRes.data)
+      console.log('Teachers:', teachersRes.data)
+
+      setAssignments(assignmentsRes.data || [])
+      setAnnouncements(announcementsRes.data || [])
+      setMaterials(materialsRes.data || [])
+      setTeachers(teachersRes.data || [])
       
-      const isTeacher = teachersRes.data.some(t => t.id === user.id) || user.role === 'teacher'
+      const isTeacher = (teachersRes.data || []).some(t => t.id === user.id) || user.role === 'teacher'
       setIsCourseTeacher(isTeacher)
-    } catch (error) {
-      console.error('Error loading course data:', error)
+
+      // Load students only for teachers
+      if (isTeacher) {
+        try {
+          const studentsRes = await axios.get(`${API_BASE_URL}/courses/${course.id}/students`)
+          setStudents(studentsRes.data || [])
+        } catch (err) {
+          console.log('Could not load students')
+        }
+      }
+    } catch (err) {
+      console.error('Error loading course data:', err)
+      setError('Failed to load course data')
     } finally {
       setLoading(false)
     }
   }
 
-  const isTeacherUser = user.role === 'teacher' || isCourseTeacher
-
   if (loading) {
     return (
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '50vh',
-        gap: '16px'
-      }}>
-        <div style={{
-          width: '40px',
-          height: '40px',
-          border: '3px solid #e5e7eb',
-          borderTopColor: '#3378ff',
-          borderRadius: '50%',
-          animation: 'spin 0.8s linear infinite'
-        }}></div>
-        <div style={{ color: '#6b7280', fontSize: '0.9rem' }}>Loading course...</div>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <div className="loading">
+        <div className="spinner"></div>
+        <div className="loading-text">Loading course...</div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="page">
+        <button className="btn btn-ghost mb-md" onClick={onBack}>← Back</button>
+        <div className="alert alert-error">{error}</div>
+        <button className="btn btn-primary" onClick={loadCourseData}>Retry</button>
       </div>
     )
   }
@@ -81,157 +93,48 @@ function CourseDetail({ course, user, onBack, onUpdate }) {
     { id: 'materials', label: '📁 Files', count: materials.length }
   ]
 
-  if (isTeacherUser) {
+  if (isCourseTeacher) {
     tabs.push({ id: 'students', label: '👥 Students', count: students.length })
   }
 
-  const getTabStyle = (isActive) => ({
-    flex: 1,
-    padding: '10px 12px',
-    background: isActive ? '#ffffff' : 'transparent',
-    border: 'none',
-    borderRadius: '10px',
-    color: isActive ? '#3378ff' : '#6b7280',
-    fontSize: '0.8rem',
-    fontWeight: isActive ? '600' : '500',
-    cursor: 'pointer',
-    boxShadow: isActive ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
-    whiteSpace: 'nowrap'
-  })
-
-  const cardStyle = {
-    backgroundColor: '#ffffff',
-    border: '1px solid #e5e7eb',
-    borderRadius: '14px',
-    padding: '16px',
-    marginBottom: '12px'
-  }
-
-  const buttonStyle = {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '12px 20px',
-    fontSize: '0.95rem',
-    fontWeight: '600',
-    backgroundColor: '#3378ff',
-    color: 'white',
-    border: 'none',
-    borderRadius: '10px',
-    cursor: 'pointer',
-    marginBottom: '16px'
-  }
-
-  const emptyStateStyle = {
-    textAlign: 'center',
-    padding: '48px 24px',
-    color: '#6b7280'
-  }
-
   return (
-    <div style={{
-      padding: '16px',
-      paddingBottom: '90px',
-      maxWidth: '600px',
-      margin: '0 auto',
-      backgroundColor: '#ffffff',
-      minHeight: '100vh'
-    }}>
-      {/* Back Button */}
-      <button 
-        onClick={onBack}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '4px',
-          background: 'none',
-          border: 'none',
-          color: '#3378ff',
-          fontSize: '0.95rem',
-          fontWeight: '500',
-          cursor: 'pointer',
-          padding: '8px 0',
-          marginBottom: '16px'
-        }}
-      >
+    <div className="page fade-in">
+      {/* Header */}
+      <button className="btn btn-ghost mb-md" onClick={onBack}>
         ← Back to Courses
       </button>
-
-      {/* Course Header */}
-      <div style={cardStyle}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-          <div style={{
-            width: '48px',
-            height: '48px',
-            background: '#eef5ff',
-            borderRadius: '10px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '1.5rem',
-            flexShrink: 0
-          }}>
-            📖
-          </div>
-          <div style={{ flex: 1 }}>
-            <h1 style={{ fontSize: '1.25rem', fontWeight: '700', margin: 0, color: '#111827' }}>
-              {course.title}
-            </h1>
+      
+      <div className="card mb-lg">
+        <div className="card-header">
+          <div className="card-icon card-icon-primary">📖</div>
+          <div className="card-body">
+            <div className="card-title">{course.title}</div>
             {course.description && (
-              <p style={{ color: '#6b7280', fontSize: '0.9rem', margin: '8px 0 0 0' }}>
-                {course.description}
-              </p>
+              <div className="card-description">{course.description}</div>
             )}
           </div>
         </div>
         
         {/* Access Code for Teachers */}
-        {isTeacherUser && course.access_code && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '16px',
-            padding: '16px',
-            background: 'linear-gradient(135deg, #eef5ff, #f9fafb)',
-            border: '2px dashed #bcd7ff',
-            borderRadius: '10px',
-            marginTop: '16px'
-          }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: '0.7rem', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase', marginBottom: '4px' }}>
-                Access Code
+        {isCourseTeacher && course.access_code && (
+          <div className="access-code-box">
+            <div>
+              <div className="text-muted" style={{ fontSize: '0.75rem', fontWeight: 600, marginBottom: 4 }}>
+                ACCESS CODE
               </div>
-              <div style={{ 
-                fontSize: '1.3rem', 
-                fontWeight: '700', 
-                fontFamily: 'monospace', 
-                letterSpacing: '3px', 
-                color: '#1a56f5' 
-              }}>
-                {course.access_code}
-              </div>
+              <div className="access-code-value">{course.access_code}</div>
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#6b7280', maxWidth: '120px' }}>
-              Share with students to join
-            </div>
+            <div className="access-code-hint">Share with students to join</div>
           </div>
         )}
       </div>
 
       {/* Navigation Tabs */}
-      <div style={{
-        display: 'flex',
-        gap: '4px',
-        backgroundColor: '#f3f4f6',
-        padding: '4px',
-        borderRadius: '14px',
-        marginBottom: '16px',
-        overflowX: 'auto'
-      }}>
+      <div className="nav-tabs">
         {tabs.map(tab => (
           <button
             key={tab.id}
-            style={getTabStyle(activeTab === tab.id)}
+            className={`nav-tab ${activeTab === tab.id ? 'active' : ''}`}
             onClick={() => setActiveTab(tab.id)}
           >
             {tab.label} ({tab.count})
@@ -241,204 +144,152 @@ function CourseDetail({ course, user, onBack, onUpdate }) {
 
       {/* Tab Content: Assignments */}
       {activeTab === 'assignments' && (
-        <div>
-          {isTeacherUser && (
-            <button style={buttonStyle} onClick={() => setShowCreateAssignment(true)}>
+        <div className="fade-in">
+          {isCourseTeacher && (
+            <button className="btn btn-primary mb-lg" onClick={() => setShowCreateAssignment(true)}>
               ➕ Create Assignment
             </button>
           )}
           
           {assignments.length === 0 ? (
-            <div style={emptyStateStyle}>
-              <div style={{ fontSize: '4rem', marginBottom: '16px', opacity: 0.6 }}>📝</div>
-              <div style={{ fontSize: '1.1rem', fontWeight: '600', color: '#111827', marginBottom: '8px' }}>
-                No assignments yet
-              </div>
-              <div style={{ fontSize: '0.9rem' }}>
-                {isTeacherUser ? 'Create your first assignment' : 'Assignments will appear here'}
+            <div className="empty-state">
+              <div className="empty-state-icon">📝</div>
+              <div className="empty-state-title">No assignments yet</div>
+              <div className="empty-state-text">
+                {isCourseTeacher ? 'Create your first assignment' : 'Assignments will appear here'}
               </div>
             </div>
           ) : (
-            assignments.map(assignment => (
-              <div key={assignment.id} style={cardStyle}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                  <div style={{
-                    width: '40px',
-                    height: '40px',
-                    background: '#eef5ff',
-                    borderRadius: '10px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '1.2rem'
-                  }}>
-                    📝
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: '600', color: '#111827', marginBottom: '4px' }}>
-                      {assignment.title}
-                    </div>
-                    {assignment.description && (
-                      <div style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '8px' }}>
-                        {assignment.description.length > 80 
-                          ? `${assignment.description.substring(0, 80)}...` 
-                          : assignment.description}
-                      </div>
-                    )}
-                    <div style={{ fontSize: '0.8rem', color: '#9ca3af', display: 'flex', gap: '12px' }}>
-                      {assignment.due_date && (
-                        <span>⏰ {new Date(assignment.due_date).toLocaleDateString()}</span>
+            <div className="flex flex-col gap-sm">
+              {assignments.map(assignment => (
+                <div key={assignment.id} className="card">
+                  <div className="card-header">
+                    <div className="card-icon card-icon-primary">📝</div>
+                    <div className="card-body">
+                      <div className="card-title">{assignment.title}</div>
+                      {assignment.description && (
+                        <div className="card-description">{assignment.description}</div>
                       )}
-                      <span>📊 {assignment.max_points} pts</span>
+                      <div className="card-meta">
+                        {assignment.due_date && (
+                          <span>⏰ Due: {new Date(assignment.due_date).toLocaleDateString()}</span>
+                        )}
+                        <span>📊 {assignment.max_points} pts</span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))
+              ))}
+            </div>
           )}
         </div>
       )}
 
       {/* Tab Content: Announcements */}
       {activeTab === 'announcements' && (
-        <div>
-          {isTeacherUser && (
-            <button style={buttonStyle} onClick={() => setShowCreateAnnouncement(true)}>
+        <div className="fade-in">
+          {isCourseTeacher && (
+            <button className="btn btn-primary mb-lg" onClick={() => setShowCreateAnnouncement(true)}>
               ➕ Post Announcement
             </button>
           )}
           
           {announcements.length === 0 ? (
-            <div style={emptyStateStyle}>
-              <div style={{ fontSize: '4rem', marginBottom: '16px', opacity: 0.6 }}>📢</div>
-              <div style={{ fontSize: '1.1rem', fontWeight: '600', color: '#111827', marginBottom: '8px' }}>
-                No announcements yet
-              </div>
-              <div style={{ fontSize: '0.9rem' }}>
-                {isTeacherUser ? 'Share updates with your students' : 'Announcements will appear here'}
+            <div className="empty-state">
+              <div className="empty-state-icon">📢</div>
+              <div className="empty-state-title">No announcements yet</div>
+              <div className="empty-state-text">
+                {isCourseTeacher ? 'Share updates with students' : 'Announcements will appear here'}
               </div>
             </div>
           ) : (
-            announcements.map(announcement => (
-              <AnnouncementCard
-                key={announcement.id}
-                announcement={announcement}
-                user={user}
-                onUpdate={loadCourseData}
-              />
-            ))
+            <div className="flex flex-col gap-md">
+              {announcements.map(announcement => (
+                <AnnouncementCard
+                  key={announcement.id}
+                  announcement={announcement}
+                  user={user}
+                  onUpdate={loadCourseData}
+                />
+              ))}
+            </div>
           )}
         </div>
       )}
 
       {/* Tab Content: Materials */}
       {activeTab === 'materials' && (
-        <div>
-          {isTeacherUser && (
-            <button style={buttonStyle} onClick={() => setShowUploadMaterial(true)}>
+        <div className="fade-in">
+          {isCourseTeacher && (
+            <button className="btn btn-primary mb-lg" onClick={() => setShowUploadMaterial(true)}>
               ⬆️ Upload Material
             </button>
           )}
           
           {materials.length === 0 ? (
-            <div style={emptyStateStyle}>
-              <div style={{ fontSize: '4rem', marginBottom: '16px', opacity: 0.6 }}>📁</div>
-              <div style={{ fontSize: '1.1rem', fontWeight: '600', color: '#111827', marginBottom: '8px' }}>
-                No materials yet
-              </div>
-              <div style={{ fontSize: '0.9rem' }}>
-                {isTeacherUser ? 'Upload course materials' : 'Materials will appear here'}
+            <div className="empty-state">
+              <div className="empty-state-icon">📁</div>
+              <div className="empty-state-title">No materials yet</div>
+              <div className="empty-state-text">
+                {isCourseTeacher ? 'Upload course materials' : 'Materials will appear here'}
               </div>
             </div>
           ) : (
-            materials.map(material => (
-              <div key={material.id} style={cardStyle}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{
-                    width: '40px',
-                    height: '40px',
-                    background: 'rgba(139, 92, 246, 0.15)',
-                    borderRadius: '10px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '1.2rem'
-                  }}>
-                    📄
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: '600', color: '#111827' }}>{material.title}</div>
-                    <div style={{ fontSize: '0.8rem', color: '#9ca3af' }}>
-                      {material.file_type} • {new Date(material.uploaded_at).toLocaleDateString()}
+            <div className="flex flex-col gap-sm">
+              {materials.map(material => (
+                <div key={material.id} className="card">
+                  <div className="card-header">
+                    <div className="card-icon card-icon-violet">📄</div>
+                    <div className="card-body">
+                      <div className="card-title">{material.title}</div>
+                      <div className="card-meta">
+                        {material.file_type} • {new Date(material.uploaded_at).toLocaleDateString()}
+                      </div>
                     </div>
+                    <a 
+                      href={`${API_BASE_URL}/uploads/${material.file_path}`}
+                      className="btn btn-sm btn-secondary"
+                      download
+                    >
+                      ⬇️
+                    </a>
                   </div>
-                  <a 
-                    href={`/uploads/${material.file_path}`}
-                    download
-                    style={{
-                      padding: '8px 12px',
-                      background: '#f3f4f6',
-                      color: '#374151',
-                      border: 'none',
-                      borderRadius: '8px',
-                      fontSize: '0.85rem',
-                      fontWeight: '500',
-                      textDecoration: 'none'
-                    }}
-                  >
-                    ⬇️ Download
-                  </a>
                 </div>
-              </div>
-            ))
+              ))}
+            </div>
           )}
         </div>
       )}
 
       {/* Tab Content: Students */}
-      {activeTab === 'students' && isTeacherUser && (
-        <div>
-          <div style={{ marginBottom: '16px', fontSize: '0.9rem', color: '#6b7280' }}>
+      {activeTab === 'students' && isCourseTeacher && (
+        <div className="fade-in">
+          <div className="text-muted mb-md">
             {students.length} student{students.length !== 1 ? 's' : ''} enrolled
           </div>
           
           {students.length === 0 ? (
-            <div style={emptyStateStyle}>
-              <div style={{ fontSize: '4rem', marginBottom: '16px', opacity: 0.6 }}>👥</div>
-              <div style={{ fontSize: '1.1rem', fontWeight: '600', color: '#111827', marginBottom: '8px' }}>
-                No students yet
-              </div>
-              <div style={{ fontSize: '0.9rem' }}>
-                Share the access code with students
-              </div>
+            <div className="empty-state">
+              <div className="empty-state-icon">👥</div>
+              <div className="empty-state-title">No students yet</div>
+              <div className="empty-state-text">Share the access code with students</div>
             </div>
           ) : (
-            students.map(student => (
-              <div key={student.id} style={cardStyle}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{
-                    width: '40px',
-                    height: '40px',
-                    background: 'rgba(16, 185, 129, 0.15)',
-                    borderRadius: '10px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '1.2rem'
-                  }}>
-                    👨‍🎓
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: '600', color: '#111827' }}>
-                      {student.first_name} {student.last_name}
+            <div className="flex flex-col gap-sm">
+              {students.map(student => (
+                <div key={student.id} className="card">
+                  <div className="card-header">
+                    <div className="card-icon card-icon-success">👨‍🎓</div>
+                    <div className="card-body">
+                      <div className="card-title">{student.first_name} {student.last_name}</div>
+                      {student.username && (
+                        <div className="card-meta">@{student.username}</div>
+                      )}
                     </div>
-                    {student.username && (
-                      <div style={{ fontSize: '0.8rem', color: '#9ca3af' }}>@{student.username}</div>
-                    )}
                   </div>
                 </div>
-              </div>
-            ))
+              ))}
+            </div>
           )}
         </div>
       )}

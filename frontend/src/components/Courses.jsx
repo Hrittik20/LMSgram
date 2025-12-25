@@ -44,173 +44,70 @@ function Courses({ user }) {
 
   if (loading) {
     return (
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '100vh',
-        gap: '16px',
-        backgroundColor: '#ffffff'
-      }}>
-        <div style={{
-          width: '40px',
-          height: '40px',
-          border: '3px solid #e5e7eb',
-          borderTopColor: '#3378ff',
-          borderRadius: '50%',
-          animation: 'spin 0.8s linear infinite'
-        }}></div>
-        <div style={{ color: '#6b7280', fontSize: '0.9rem' }}>Loading courses...</div>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <div className="loading">
+        <div className="spinner"></div>
+        <div className="loading-text">Loading courses...</div>
       </div>
     )
   }
 
-  const buttonStyle = {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '12px 20px',
-    fontSize: '0.95rem',
-    fontWeight: '600',
-    border: 'none',
-    borderRadius: '10px',
-    cursor: 'pointer'
-  }
-
   return (
-    <div style={{
-      padding: '16px',
-      paddingBottom: '90px',
-      maxWidth: '600px',
-      margin: '0 auto',
-      backgroundColor: '#ffffff',
-      minHeight: '100vh'
-    }}>
+    <div className="page fade-in">
       {/* Header */}
-      <div style={{ marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '1.75rem', fontWeight: '800', margin: 0, color: '#111827' }}>
-          My Courses
-        </h1>
-        <p style={{ fontSize: '0.9rem', color: '#6b7280', margin: '4px 0 0 0' }}>
+      <div className="page-header">
+        <div className="page-title">My Courses</div>
+        <div className="page-subtitle">
           {courses.length === 0 
             ? 'Get started by creating or joining a course'
             : `${courses.length} course${courses.length !== 1 ? 's' : ''}`}
-        </p>
+        </div>
       </div>
 
       {/* Action Buttons */}
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
+      <div className="flex gap-md mb-lg">
         {user.role === 'teacher' && (
-          <button 
-            style={{ ...buttonStyle, backgroundColor: '#3378ff', color: 'white' }}
-            onClick={() => setShowCreateModal(true)}
-          >
+          <button className="btn btn-primary" onClick={() => setShowCreateModal(true)}>
             ➕ Create Course
           </button>
         )}
-        <button 
-          style={{ ...buttonStyle, backgroundColor: '#f3f4f6', color: '#374151', border: '2px solid #3378ff' }}
-          onClick={() => setShowJoinModal(true)}
-        >
+        <button className="btn btn-outline" onClick={() => setShowJoinModal(true)}>
           🔗 Join Course
         </button>
       </div>
 
       {/* Course List */}
       {courses.length === 0 ? (
-        <div style={{
-          textAlign: 'center',
-          padding: '48px 24px',
-          color: '#6b7280'
-        }}>
-          <div style={{ fontSize: '4rem', marginBottom: '16px', opacity: 0.6 }}>📚</div>
-          <div style={{ fontSize: '1.25rem', fontWeight: '600', color: '#111827', marginBottom: '8px' }}>
-            No courses yet
-          </div>
-          <div style={{ fontSize: '0.9rem', marginBottom: '24px' }}>
+        <div className="empty-state">
+          <div className="empty-state-icon">📚</div>
+          <div className="empty-state-title">No courses yet</div>
+          <div className="empty-state-text">
             {user.role === 'teacher'
               ? 'Create your first course to start teaching'
               : 'Join a course using an access code'}
           </div>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div className="course-grid">
           {courses.map(course => (
             <div 
               key={course.id} 
+              className="course-card"
               onClick={() => setSelectedCourse(course)}
-              style={{
-                backgroundColor: '#ffffff',
-                border: '1px solid #e5e7eb',
-                borderRadius: '14px',
-                padding: '16px',
-                cursor: 'pointer',
-                position: 'relative',
-                overflow: 'hidden'
-              }}
             >
-              <div style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: '4px',
-                background: 'linear-gradient(90deg, #3378ff, #8b5cf6)'
-              }} />
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                <div style={{
-                  width: '52px',
-                  height: '52px',
-                  background: 'linear-gradient(135deg, #eef5ff, #f9fafb)',
-                  borderRadius: '10px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.5rem',
-                  flexShrink: 0
-                }}>
-                  📖
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ 
-                    fontWeight: '700', 
-                    fontSize: '1.1rem',
-                    color: '#111827',
-                    marginBottom: '4px',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap'
-                  }}>
-                    {course.title}
-                  </div>
+              <div className="course-card-header">
+                <div className="course-card-icon">📖</div>
+                <div className="course-card-info">
+                  <div className="course-card-title">{course.title}</div>
                   {course.description && (
-                    <div style={{ 
-                      fontSize: '0.85rem', 
-                      color: '#6b7280',
-                      overflow: 'hidden',
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical'
-                    }}>
-                      {course.description}
-                    </div>
+                    <div className="course-card-desc">{course.description}</div>
                   )}
                 </div>
               </div>
-              <div style={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center',
-                marginTop: '12px',
-                paddingTop: '12px',
-                borderTop: '1px solid #f3f4f6'
-              }}>
-                <span style={{ fontSize: '0.8rem', color: '#9ca3af' }}>
+              <div className="course-card-footer">
+                <span className="course-card-meta">
                   📅 {new Date(course.created_at).toLocaleDateString()}
                 </span>
-                <span style={{ color: '#9ca3af', fontSize: '1.2rem' }}>→</span>
+                <span className="course-card-arrow">→</span>
               </div>
             </div>
           ))}
@@ -222,9 +119,12 @@ function Courses({ user }) {
         <CreateCourseModal
           user={user}
           onClose={() => setShowCreateModal(false)}
-          onSuccess={async () => {
+          onSuccess={(newCourse) => {
             setShowCreateModal(false)
-            await loadCourses()
+            loadCourses()
+            if (newCourse) {
+              setSelectedCourse(newCourse)
+            }
           }}
         />
       )}
