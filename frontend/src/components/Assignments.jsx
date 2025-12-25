@@ -8,6 +8,7 @@ function Assignments({ user }) {
   const [assignments, setAssignments] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedAssignment, setSelectedAssignment] = useState(null)
+  const [filter, setFilter] = useState('all')
 
   useEffect(() => {
     loadAssignments()
@@ -15,11 +16,9 @@ function Assignments({ user }) {
 
   const loadAssignments = async () => {
     try {
-      // First get all courses
       const coursesRes = await axios.get(`${API_BASE_URL}/courses?telegram_id=${user.telegram_id}`)
       const courses = coursesRes.data
 
-      // Then get assignments for each course
       let allAssignments = []
       for (const course of courses) {
         const assignmentsRes = await axios.get(`${API_BASE_URL}/assignments/course/${course.id}`)
@@ -29,7 +28,6 @@ function Assignments({ user }) {
         ]
       }
 
-      // Sort by due date
       allAssignments.sort((a, b) => {
         if (!a.due_date) return 1
         if (!b.due_date) return -1
@@ -58,7 +56,12 @@ function Assignments({ user }) {
   }
 
   if (loading) {
-    return <div className="loading"><div className="spinner"></div></div>
+    return (
+      <div className="loading">
+        <div className="spinner"></div>
+        <div className="loading-text">Loading assignments...</div>
+      </div>
+    )
   }
 
   const today = new Date()
@@ -71,89 +74,139 @@ function Assignments({ user }) {
     return new Date(a.due_date) < today
   })
 
-  return (
-    <div>
-      <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem' }}>All Assignments</h2>
+  const filteredAssignments = filter === 'upcoming' 
+    ? upcomingAssignments 
+    : filter === 'past' 
+    ? pastAssignments 
+    : assignments
 
+  return (
+    <div className="page fade-in">
+      {/* Header */}
+      <div className="page-header">
+        <div className="page-title">Assignments</div>
+        <div className="page-subtitle">
+          {assignments.length === 0 
+            ? 'Your assignments will appear here'
+            : `${upcomingAssignments.length} upcoming, ${pastAssignments.length} past`}
+        </div>
+      </div>
+
+      {/* Filter Tabs */}
+      {assignments.length > 0 && (
+        <div className="nav-tabs">
+          <button 
+            className={`nav-tab ${filter === 'all' ? 'active' : ''}`}
+            onClick={() => setFilter('all')}
+          >
+            All ({assignments.length})
+          </button>
+          <button 
+            className={`nav-tab ${filter === 'upcoming' ? 'active' : ''}`}
+            onClick={() => setFilter('upcoming')}
+          >
+            📌 Upcoming ({upcomingAssignments.length})
+          </button>
+          <button 
+            className={`nav-tab ${filter === 'past' ? 'active' : ''}`}
+            onClick={() => setFilter('past')}
+          >
+            ✅ Past ({pastAssignments.length})
+          </button>
+        </div>
+      )}
+
+      {/* Assignment List */}
       {assignments.length === 0 ? (
         <div className="empty-state">
           <div className="empty-state-icon">📝</div>
-          <div className="empty-state-text">No assignments yet</div>
-          <p style={{ fontSize: '0.9rem', marginTop: '0.5rem' }}>
+          <div className="empty-state-title">No assignments yet</div>
+          <div className="empty-state-text">
             {user.role === 'teacher'
               ? 'Create assignments in your courses'
               : 'Assignments will appear here when teachers post them'}
-          </p>
+          </div>
+        </div>
+      ) : filteredAssignments.length === 0 ? (
+        <div className="empty-state">
+          <div className="empty-state-icon">{filter === 'upcoming' ? '🎉' : '📋'}</div>
+          <div className="empty-state-title">
+            {filter === 'upcoming' ? 'All caught up!' : 'No past assignments'}
+          </div>
+          <div className="empty-state-text">
+            {filter === 'upcoming' 
+              ? 'You have no upcoming assignments' 
+              : 'Past assignments will appear here'}
+          </div>
         </div>
       ) : (
-        <>
-          {upcomingAssignments.length > 0 && (
-            <>
-              <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem', color: 'var(--primary-color)' }}>
-                📌 Upcoming & Active
-              </h3>
-              {upcomingAssignments.map(assignment => (
-                <AssignmentCard
-                  key={assignment.id}
-                  assignment={assignment}
-                  onClick={() => setSelectedAssignment(assignment)}
-                />
-              ))}
-            </>
-          )}
+        <div className="flex flex-col gap-sm">
+          {filteredAssignments.map(assignment => {
+            const isOverdue = assignment.due_date && new Date(assignment.due_date) < today
+            const daysUntilDue = assignment.due_date 
+              ? Math.ceil((new Date(assignment.due_date) - today) / (1000 * 60 * 60 * 24))
+              : null
 
-          {pastAssignments.length > 0 && (
-            <>
-              <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem', marginTop: '2rem', color: 'var(--text-secondary)' }}>
-                📋 Past Assignments
-              </h3>
-              {pastAssignments.map(assignment => (
-                <AssignmentCard
-                  key={assignment.id}
-                  assignment={assignment}
-                  onClick={() => setSelectedAssignment(assignment)}
-                  isPast
-                />
-              ))}
-            </>
-          )}
-        </>
+            return (
+              <div 
+                key={assignment.id} 
+                className="card card-clickable"
+                onClick={() => setSelectedAssignment(assignment)}
+                style={{ opacity: isOverdue ? 0.7 : 1 }}
+              >
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
+                  <div className="card-icon" style={{ 
+                    background: isOverdue 
+                      ? 'rgba(244, 63, 94, 0.15)' 
+                      : daysUntilDue !== null && daysUntilDue <= 2 
+                      ? 'rgba(245, 158, 11, 0.15)' 
+                      : 'var(--primary-100)'
+                  }}>
+                    📝
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="card-title">{assignment.title}</div>
+                    <div className="card-meta mt-sm">
+                      <span>📚 {assignment.courseName}</span>
+                    </div>
+                    {assignment.due_date && (
+                      <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '0.5rem', 
+                        marginTop: '0.5rem',
+                        fontSize: '0.8rem',
+                        color: isOverdue ? 'var(--danger)' : daysUntilDue <= 2 ? 'var(--warning)' : 'var(--neutral-500)'
+                      }}>
+                        <span>⏰</span>
+                        <span>
+                          {isOverdue 
+                            ? 'Overdue' 
+                            : daysUntilDue === 0 
+                            ? 'Due today' 
+                            : daysUntilDue === 1 
+                            ? 'Due tomorrow' 
+                            : `Due in ${daysUntilDue} days`}
+                        </span>
+                        {isOverdue && <span className="badge badge-danger">Late</span>}
+                        {!isOverdue && daysUntilDue !== null && daysUntilDue <= 2 && (
+                          <span className="badge badge-warning">Soon</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
+                    <span className="badge badge-info">{assignment.max_points} pts</span>
+                    <span style={{ color: 'var(--neutral-400)', fontSize: '1.25rem' }}>→</span>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
       )}
     </div>
   )
 }
 
-function AssignmentCard({ assignment, onClick, isPast = false }) {
-  const isOverdue = assignment.due_date && new Date(assignment.due_date) < new Date()
-  
-  return (
-    <div className="card" onClick={onClick} style={{ cursor: 'pointer', opacity: isPast ? 0.7 : 1 }}>
-      <div className="assignment-item">
-        <div className="assignment-info">
-          <div className="card-title">{assignment.title}</div>
-          <div className="card-meta" style={{ marginTop: '0.25rem' }}>
-            📚 {assignment.courseName}
-          </div>
-          {assignment.due_date && (
-            <div className="assignment-due">
-              <span>⏰</span>
-              <span>Due: {new Date(assignment.due_date).toLocaleDateString()}</span>
-              {isOverdue && <span className="badge badge-danger">Overdue</span>}
-            </div>
-          )}
-        </div>
-        <div className="assignment-actions">
-          <button className="btn btn-small btn-primary" onClick={(e) => {
-            e.stopPropagation()
-            onClick()
-          }}>
-            View
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 export default Assignments
-

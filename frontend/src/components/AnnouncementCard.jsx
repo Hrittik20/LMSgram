@@ -64,103 +64,123 @@ function AnnouncementCard({ announcement, user, onUpdate }) {
     }
   }
 
+  const formatDate = (dateString) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffMs = now - date
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+
+    if (diffMins < 1) return 'Just now'
+    if (diffMins < 60) return `${diffMins}m ago`
+    if (diffHours < 24) return `${diffHours}h ago`
+    if (diffDays < 7) return `${diffDays}d ago`
+    return date.toLocaleDateString()
+  }
+
   return (
-    <div className="card" style={{ marginBottom: '1rem' }}>
-      <div className="card-title">{announcement.title}</div>
-      <p style={{ marginTop: '0.5rem', whiteSpace: 'pre-wrap' }}>{announcement.content}</p>
-      <div className="card-meta" style={{ marginTop: '0.75rem', fontSize: '0.9rem', color: '#666' }}>
-        {new Date(announcement.created_at).toLocaleString()}
+    <div className="announcement-card">
+      <div className="announcement-header">
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+          <div style={{ 
+            width: '36px', 
+            height: '36px', 
+            background: 'rgba(245, 158, 11, 0.15)',
+            borderRadius: 'var(--radius-md)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '1.1rem',
+            flexShrink: 0
+          }}>
+            📢
+          </div>
+          <div style={{ flex: 1 }}>
+            <div className="announcement-title">{announcement.title}</div>
+            <div className="announcement-content">{announcement.content}</div>
+            <div className="announcement-meta">
+              📅 {formatDate(announcement.created_at)}
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div style={{ marginTop: '1rem', borderTop: '1px solid #eee', paddingTop: '0.75rem' }}>
-        <button
-          className="btn btn-secondary"
-          onClick={() => setShowComments(!showComments)}
-          style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}
-        >
-          {showComments ? '👁️ Hide' : '💬 Show'} Comments ({comments.length})
+      <div className="announcement-footer">
+        <button className="comments-toggle" onClick={() => setShowComments(!showComments)}>
+          <span>💬</span>
+          <span>{showComments ? 'Hide' : 'Show'} Comments</span>
+          {comments.length > 0 && <span className="badge badge-primary">{comments.length}</span>}
         </button>
+      </div>
 
-        {showComments && (
-          <div style={{ marginTop: '1rem' }}>
-            {commentLoading ? (
-              <div style={{ textAlign: 'center', padding: '1rem' }}>Loading comments...</div>
-            ) : comments.length === 0 ? (
-              <div style={{ color: '#666', fontSize: '0.9rem', padding: '0.5rem' }}>
-                No comments yet. Be the first to comment!
-              </div>
-            ) : (
-              <div style={{ marginBottom: '1rem' }}>
-                {comments.map(comment => (
-                  <div
-                    key={comment.id}
-                    style={{
-                      padding: '0.75rem',
-                      marginBottom: '0.5rem',
-                      backgroundColor: '#f9f9f9',
-                      borderRadius: '4px',
-                      borderLeft: '3px solid #007bff'
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>
-                          {comment.first_name} {comment.last_name || ''}
-                          {comment.role === 'teacher' && ' 👨‍🏫'}
-                        </div>
-                        <div style={{ marginTop: '0.25rem', fontSize: '0.85rem', color: '#666' }}>
-                          {comment.content}
-                        </div>
-                        <div style={{ marginTop: '0.25rem', fontSize: '0.75rem', color: '#999' }}>
-                          {new Date(comment.created_at).toLocaleString()}
-                        </div>
-                      </div>
-                      {comment.user_id === user.id && (
-                        <button
-                          className="btn btn-danger"
-                          onClick={() => handleDeleteComment(comment.id)}
-                          style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem', marginLeft: '0.5rem' }}
-                        >
-                          🗑️
-                        </button>
+      {showComments && (
+        <div className="comments-section fade-in">
+          {commentLoading ? (
+            <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--neutral-500)' }}>
+              Loading comments...
+            </div>
+          ) : comments.length === 0 ? (
+            <div style={{ 
+              textAlign: 'center', 
+              padding: '1rem', 
+              color: 'var(--neutral-500)',
+              fontSize: '0.9rem'
+            }}>
+              No comments yet. Be the first to comment!
+            </div>
+          ) : (
+            <div style={{ marginBottom: '1rem' }}>
+              {comments.map(comment => (
+                <div key={comment.id} className="comment-item">
+                  <div className="comment-header">
+                    <div className="comment-author">
+                      {comment.first_name} {comment.last_name || ''}
+                      {comment.role === 'teacher' && (
+                        <span className="teacher-badge badge badge-primary">Teacher</span>
                       )}
                     </div>
+                    {comment.user_id === user.id && (
+                      <button
+                        className="btn btn-icon-only btn-ghost"
+                        onClick={() => handleDeleteComment(comment.id)}
+                        style={{ 
+                          width: '28px', 
+                          height: '28px', 
+                          fontSize: '0.8rem',
+                          color: 'var(--neutral-400)'
+                        }}
+                      >
+                        🗑️
+                      </button>
+                    )}
                   </div>
-                ))}
-              </div>
-            )}
+                  <div className="comment-content">{comment.content}</div>
+                  <div className="comment-time">{formatDate(comment.created_at)}</div>
+                </div>
+              ))}
+            </div>
+          )}
 
-            <form onSubmit={handleSubmitComment} style={{ marginTop: '1rem' }}>
-              <textarea
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                placeholder="Write a comment..."
-                style={{
-                  width: '100%',
-                  minHeight: '60px',
-                  padding: '0.5rem',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px',
-                  fontSize: '0.9rem',
-                  fontFamily: 'inherit',
-                  resize: 'vertical'
-                }}
-              />
-              <button
-                type="submit"
-                className="btn btn-primary"
-                disabled={loading || !newComment.trim()}
-                style={{ marginTop: '0.5rem' }}
-              >
-                {loading ? 'Posting...' : '💬 Post Comment'}
-              </button>
-            </form>
-          </div>
-        )}
-      </div>
+          <form onSubmit={handleSubmitComment} className="comment-form">
+            <textarea
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              placeholder="Write a comment..."
+              rows="2"
+            />
+            <button
+              type="submit"
+              className="btn btn-primary btn-sm mt-sm"
+              disabled={loading || !newComment.trim()}
+            >
+              {loading ? 'Posting...' : '💬 Post Comment'}
+            </button>
+          </form>
+        </div>
+      )}
     </div>
   )
 }
 
 export default AnnouncementCard
-

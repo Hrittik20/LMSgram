@@ -48,8 +48,9 @@ function CreateAnnouncementModal({ course, user, onClose, onSuccess }) {
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
             {error && (
-              <div style={{ padding: '0.75rem', background: '#ffebee', color: '#c62828', borderRadius: '8px', marginBottom: '1rem' }}>
-                {error}
+              <div className="alert alert-error">
+                <span>⚠️</span>
+                <span>{error}</span>
               </div>
             )}
 
@@ -62,14 +63,15 @@ function CreateAnnouncementModal({ course, user, onClose, onSuccess }) {
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 required
+                autoFocus
               />
             </div>
 
             <div className="form-group">
-              <label className="form-label">Content *</label>
+              <label className="form-label">Message *</label>
               <textarea
                 className="form-textarea"
-                placeholder="Announcement message..."
+                placeholder="Write your announcement..."
                 value={formData.content}
                 onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                 rows="6"
@@ -77,8 +79,9 @@ function CreateAnnouncementModal({ course, user, onClose, onSuccess }) {
               />
             </div>
 
-            <div style={{ padding: '0.75rem', background: 'var(--tg-theme-secondary-bg-color)', borderRadius: '8px', fontSize: '0.9rem' }}>
-              📢 All enrolled students will be notified via Telegram
+            <div className="alert alert-info">
+              <span>📢</span>
+              <span>All enrolled students will be notified about this announcement via Telegram.</span>
             </div>
           </div>
 
@@ -87,7 +90,7 @@ function CreateAnnouncementModal({ course, user, onClose, onSuccess }) {
               Cancel
             </button>
             <button type="submit" className="btn btn-primary" disabled={loading}>
-              {loading ? 'Posting...' : 'Post Announcement'}
+              {loading ? 'Posting...' : '📢 Post Announcement'}
             </button>
           </div>
         </form>
@@ -97,4 +100,3 @@ function CreateAnnouncementModal({ course, user, onClose, onSuccess }) {
 }
 
 export default CreateAnnouncementModal
-

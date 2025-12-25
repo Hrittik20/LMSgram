@@ -43,8 +43,9 @@ function JoinCourseModal({ user, onClose, onSuccess }) {
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
             {error && (
-              <div style={{ padding: '0.75rem', background: '#ffebee', color: '#c62828', borderRadius: '8px', marginBottom: '1rem' }}>
-                {error}
+              <div className="alert alert-error">
+                <span>⚠️</span>
+                <span>{error}</span>
               </div>
             )}
 
@@ -53,17 +54,27 @@ function JoinCourseModal({ user, onClose, onSuccess }) {
               <input
                 type="text"
                 className="form-input"
-                placeholder="Enter course access code"
+                placeholder="Enter 8-character code"
                 value={accessCode}
                 onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
-                style={{ textTransform: 'uppercase', letterSpacing: '2px', fontSize: '1.1rem', textAlign: 'center' }}
+                style={{ 
+                  textTransform: 'uppercase', 
+                  letterSpacing: '4px', 
+                  fontSize: '1.25rem', 
+                  textAlign: 'center',
+                  fontWeight: '700',
+                  fontFamily: 'var(--font-mono)'
+                }}
                 required
                 maxLength={8}
+                autoFocus
               />
+              <div className="form-hint text-center">Ask your teacher for the access code</div>
             </div>
 
-            <div style={{ padding: '0.75rem', background: 'var(--tg-theme-secondary-bg-color)', borderRadius: '8px', fontSize: '0.9rem' }}>
-              💡 Ask your teacher for the course access code. It's usually an 8-character code.
+            <div className="alert alert-info">
+              <span>💡</span>
+              <span>Access codes are 8-character codes provided by teachers to let students join their courses.</span>
             </div>
           </div>
 
@@ -71,8 +82,8 @@ function JoinCourseModal({ user, onClose, onSuccess }) {
             <button type="button" className="btn btn-secondary" onClick={onClose} disabled={loading}>
               Cancel
             </button>
-            <button type="submit" className="btn btn-primary" disabled={loading}>
-              {loading ? 'Joining...' : 'Join Course'}
+            <button type="submit" className="btn btn-primary" disabled={loading || accessCode.length < 6}>
+              {loading ? 'Joining...' : '🔗 Join Course'}
             </button>
           </div>
         </form>
@@ -82,4 +93,3 @@ function JoinCourseModal({ user, onClose, onSuccess }) {
 }
 
 export default JoinCourseModal
-

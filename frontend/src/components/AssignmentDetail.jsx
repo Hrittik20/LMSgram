@@ -8,9 +8,7 @@ function AssignmentDetail({ assignment, user, onBack }) {
   const [submissions, setSubmissions] = useState([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
-  const [formData, setFormData] = useState({
-    content: ''
-  })
+  const [formData, setFormData] = useState({ content: '' })
   const [file, setFile] = useState(null)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -23,7 +21,6 @@ function AssignmentDetail({ assignment, user, onBack }) {
   const loadAssignmentData = async () => {
     try {
       if (user.role === 'student') {
-        // Load student's own submission
         try {
           const response = await axios.get(
             `${API_BASE_URL}/assignments/${assignment.id}/my-submission?telegram_id=${user.telegram_id}`
@@ -31,12 +28,9 @@ function AssignmentDetail({ assignment, user, onBack }) {
           setSubmission(response.data)
           setFormData({ content: response.data.content || '' })
         } catch (err) {
-          if (err.response?.status !== 404) {
-            throw err
-          }
+          if (err.response?.status !== 404) throw err
         }
       } else {
-        // Load all submissions for teacher
         const response = await axios.get(`${API_BASE_URL}/assignments/${assignment.id}/submissions`)
         setSubmissions(response.data)
       }
@@ -63,20 +57,14 @@ function AssignmentDetail({ assignment, user, onBack }) {
       const data = new FormData()
       data.append('telegram_id', user.telegram_id)
       data.append('content', formData.content)
-      if (file) {
-        data.append('file', file)
-      }
+      if (file) data.append('file', file)
 
       await axios.post(`${API_BASE_URL}/assignments/${assignment.id}/submit`, data, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+        headers: { 'Content-Type': 'multipart/form-data' }
       })
 
       setSuccess('Assignment submitted successfully!')
-      setTimeout(() => {
-        loadAssignmentData()
-      }, 1000)
+      setTimeout(loadAssignmentData, 1000)
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to submit assignment')
     } finally {
@@ -99,113 +87,145 @@ function AssignmentDetail({ assignment, user, onBack }) {
   }
 
   if (loading) {
-    return <div className="loading"><div className="spinner"></div></div>
+    return (
+      <div className="loading">
+        <div className="spinner"></div>
+        <div className="loading-text">Loading assignment...</div>
+      </div>
+    )
   }
 
   const isOverdue = assignment.due_date && new Date(assignment.due_date) < new Date()
-  const canSubmit = user.role === 'student' && (!isOverdue || !submission)
 
   return (
-    <div>
-      <button className="btn btn-secondary" onClick={onBack} style={{ marginBottom: '1rem' }}>
+    <div className="page fade-in">
+      {/* Header */}
+      <button className="btn btn-ghost" onClick={onBack} style={{ marginLeft: '-0.5rem', marginBottom: '1rem' }}>
         ← Back
       </button>
 
-      <div className="card" style={{ marginBottom: '1.5rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1rem' }}>
-          <div>
-            <h2 className="card-title" style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>
+      {/* Assignment Info Card */}
+      <div className="card mb-lg">
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', marginBottom: '1rem' }}>
+          <div className="card-icon card-icon-primary">📝</div>
+          <div style={{ flex: 1 }}>
+            <h1 style={{ fontSize: '1.35rem', fontWeight: '700', marginBottom: '0.25rem' }}>
               {assignment.title}
-            </h2>
+            </h1>
             <div className="card-meta">📚 {assignment.courseName}</div>
           </div>
-          <div className="badge badge-info" style={{ fontSize: '0.9rem' }}>
-            {assignment.max_points} points
-          </div>
+          <span className="badge badge-info" style={{ fontSize: '0.85rem', padding: '0.5rem 0.75rem' }}>
+            {assignment.max_points} pts
+          </span>
         </div>
 
         {assignment.description && (
-          <div style={{ marginTop: '1rem', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+          <div style={{ 
+            marginTop: '1rem', 
+            padding: '1rem',
+            background: 'var(--neutral-50)',
+            borderRadius: 'var(--radius-md)',
+            fontSize: '0.9rem',
+            lineHeight: 1.7,
+            whiteSpace: 'pre-wrap'
+          }}>
             {assignment.description}
           </div>
         )}
 
-        <div style={{ marginTop: '1rem', padding: '0.75rem', background: 'var(--tg-theme-secondary-bg-color)', borderRadius: '8px' }}>
-          {assignment.due_date ? (
-            <div>
-              <strong>Due Date:</strong> {new Date(assignment.due_date).toLocaleString()}
-              {isOverdue && <span className="badge badge-danger" style={{ marginLeft: '0.5rem' }}>Overdue</span>}
+        <div style={{ 
+          marginTop: '1rem', 
+          padding: '0.875rem',
+          background: isOverdue ? 'rgba(244, 63, 94, 0.1)' : 'var(--primary-50)',
+          borderRadius: 'var(--radius-md)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }}>
+          <div>
+            <div style={{ fontWeight: '600', fontSize: '0.85rem' }}>Due Date</div>
+            <div style={{ fontSize: '0.9rem', color: isOverdue ? 'var(--danger)' : 'var(--neutral-600)' }}>
+              {assignment.due_date 
+                ? new Date(assignment.due_date).toLocaleString() 
+                : 'No due date'}
             </div>
-          ) : (
-            <div><strong>No due date</strong></div>
-          )}
+          </div>
+          {isOverdue && <span className="badge badge-danger">Overdue</span>}
         </div>
       </div>
 
+      {/* Student View */}
       {user.role === 'student' && (
         <div>
           {submission ? (
             <div className="card">
-              <h3 className="card-title" style={{ marginBottom: '1rem' }}>Your Submission</h3>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span>✅</span> Your Submission
+              </h3>
               
-              <div style={{ marginBottom: '1rem' }}>
-                <div className="card-meta" style={{ marginBottom: '0.5rem' }}>
-                  Submitted: {new Date(submission.submitted_at).toLocaleString()}
-                </div>
-                {submission.content && (
-                  <div style={{ marginTop: '0.75rem', padding: '0.75rem', background: 'var(--tg-theme-secondary-bg-color)', borderRadius: '8px', whiteSpace: 'pre-wrap' }}>
-                    {submission.content}
-                  </div>
-                )}
-                {submission.file_path && (
-                  <div style={{ marginTop: '0.75rem' }}>
-                    <a href={`/uploads/${submission.file_path}`} className="btn btn-secondary" download>
-                      📎 Download submitted file
-                    </a>
-                  </div>
-                )}
+              <div className="card-meta mb-md">
+                Submitted: {new Date(submission.submitted_at).toLocaleString()}
               </div>
+              
+              {submission.content && (
+                <div style={{ 
+                  padding: '1rem',
+                  background: 'var(--neutral-50)',
+                  borderRadius: 'var(--radius-md)',
+                  whiteSpace: 'pre-wrap',
+                  fontSize: '0.9rem',
+                  marginBottom: '1rem'
+                }}>
+                  {submission.content}
+                </div>
+              )}
+              
+              {submission.file_path && (
+                <a href={`/uploads/${submission.file_path}`} className="btn btn-outline btn-sm mb-md" download>
+                  📎 Download submitted file
+                </a>
+              )}
 
               {submission.grade !== null ? (
-                <div style={{ marginTop: '1rem', padding: '1rem', background: '#e8f5e9', borderRadius: '8px', border: '2px solid var(--success-color)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                    <strong style={{ fontSize: '1.1rem' }}>Grade:</strong>
+                <div style={{ 
+                  marginTop: '1rem',
+                  padding: '1.25rem',
+                  background: 'rgba(16, 185, 129, 0.1)',
+                  borderRadius: 'var(--radius-md)',
+                  border: '2px solid var(--success)'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                    <span style={{ fontWeight: '600' }}>Grade</span>
                     <div className="grade-display">
                       <span className="grade-value">{submission.grade}</span>
-                      <span>/ {assignment.max_points}</span>
+                      <span style={{ color: 'var(--neutral-500)' }}>/ {assignment.max_points}</span>
                     </div>
                   </div>
                   {submission.feedback && (
-                    <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid #c8e6c9' }}>
-                      <strong>Feedback:</strong>
-                      <p style={{ marginTop: '0.5rem', whiteSpace: 'pre-wrap' }}>{submission.feedback}</p>
+                    <div style={{ borderTop: '1px solid rgba(16, 185, 129, 0.2)', paddingTop: '0.75rem', marginTop: '0.75rem' }}>
+                      <div style={{ fontWeight: '600', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Feedback</div>
+                      <p style={{ fontSize: '0.9rem', margin: 0, whiteSpace: 'pre-wrap' }}>{submission.feedback}</p>
                     </div>
                   )}
-                  <div className="card-meta" style={{ marginTop: '0.75rem' }}>
+                  <div className="card-meta mt-md">
                     Graded: {new Date(submission.graded_at).toLocaleString()}
                   </div>
                 </div>
               ) : (
-                <div style={{ padding: '0.75rem', background: '#fff3e0', borderRadius: '8px', textAlign: 'center' }}>
-                  ⏳ Waiting for grade
+                <div className="alert alert-warning">
+                  <span>⏳</span>
+                  <span>Waiting for grade</span>
                 </div>
               )}
             </div>
           ) : (
             <div className="card">
-              <h3 className="card-title" style={{ marginBottom: '1rem' }}>Submit Assignment</h3>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '1rem' }}>
+                Submit Assignment
+              </h3>
 
-              {error && (
-                <div style={{ padding: '0.75rem', background: '#ffebee', color: '#c62828', borderRadius: '8px', marginBottom: '1rem' }}>
-                  {error}
-                </div>
-              )}
-
-              {success && (
-                <div style={{ padding: '0.75rem', background: '#e8f5e9', color: '#2e7d32', borderRadius: '8px', marginBottom: '1rem' }}>
-                  {success}
-                </div>
-              )}
+              {error && <div className="alert alert-error"><span>⚠️</span>{error}</div>}
+              {success && <div className="alert alert-success"><span>✅</span>{success}</div>}
 
               <form onSubmit={handleSubmit}>
                 <div className="form-group">
@@ -230,7 +250,7 @@ function AssignmentDetail({ assignment, user, onBack }) {
                     />
                     <label htmlFor="submission-file" className="file-input-label">
                       <span>📎</span>
-                      <span>{file ? file.name : 'Choose file'}</span>
+                      <span>{file ? file.name : 'Choose file to upload'}</span>
                     </label>
                   </div>
                   {file && (
@@ -240,8 +260,8 @@ function AssignmentDetail({ assignment, user, onBack }) {
                   )}
                 </div>
 
-                <button type="submit" className="btn btn-success btn-block" disabled={submitting || !canSubmit}>
-                  {submitting ? 'Submitting...' : isOverdue ? 'Late Submission' : 'Submit Assignment'}
+                <button type="submit" className="btn btn-success btn-block btn-lg" disabled={submitting}>
+                  {submitting ? 'Submitting...' : isOverdue ? '⚠️ Late Submission' : '📤 Submit Assignment'}
                 </button>
               </form>
             </div>
@@ -249,74 +269,90 @@ function AssignmentDetail({ assignment, user, onBack }) {
         </div>
       )}
 
+      {/* Teacher View */}
       {user.role === 'teacher' && (
         <div>
-          <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '1rem' }}>
             Student Submissions ({submissions.length})
           </h3>
 
           {submissions.length === 0 ? (
             <div className="empty-state">
               <div className="empty-state-icon">📝</div>
-              <div className="empty-state-text">No submissions yet</div>
+              <div className="empty-state-title">No submissions yet</div>
+              <div className="empty-state-text">Student submissions will appear here</div>
             </div>
           ) : (
-            submissions.map(sub => (
-              <div key={sub.id} className="card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1rem' }}>
-                  <div>
-                    <div className="card-title">
-                      {sub.first_name} {sub.last_name}
+            <div className="flex flex-col gap-md">
+              {submissions.map(sub => (
+                <div key={sub.id} className="card">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <div className="card-icon card-icon-success" style={{ width: '40px', height: '40px', fontSize: '1.1rem' }}>👨‍🎓</div>
+                      <div>
+                        <div className="card-title" style={{ fontSize: '1rem' }}>
+                          {sub.first_name} {sub.last_name}
+                        </div>
+                        {sub.username && <div className="card-meta">@{sub.username}</div>}
+                        <div className="card-meta">
+                          Submitted: {new Date(sub.submitted_at).toLocaleString()}
+                        </div>
+                      </div>
                     </div>
-                    {sub.username && (
-                      <div className="card-meta">@{sub.username}</div>
+                    {sub.grade !== null ? (
+                      <span className="badge badge-success" style={{ fontSize: '0.9rem', padding: '0.5rem 0.75rem' }}>
+                        {sub.grade}/{assignment.max_points}
+                      </span>
+                    ) : (
+                      <span className="badge badge-warning">Not graded</span>
                     )}
-                    <div className="card-meta" style={{ marginTop: '0.25rem' }}>
-                      Submitted: {new Date(sub.submitted_at).toLocaleString()}
-                    </div>
                   </div>
-                  {sub.grade !== null ? (
-                    <div className="badge badge-success" style={{ fontSize: '1rem', padding: '0.5rem 0.875rem' }}>
-                      {sub.grade}/{assignment.max_points}
+
+                  {sub.content && (
+                    <div style={{ 
+                      padding: '0.875rem',
+                      background: 'var(--neutral-50)',
+                      borderRadius: 'var(--radius-md)',
+                      marginBottom: '0.75rem',
+                      whiteSpace: 'pre-wrap',
+                      fontSize: '0.9rem'
+                    }}>
+                      {sub.content}
                     </div>
-                  ) : (
-                    <div className="badge badge-warning">Not graded</div>
                   )}
-                </div>
 
-                {sub.content && (
-                  <div style={{ padding: '0.75rem', background: 'var(--tg-theme-secondary-bg-color)', borderRadius: '8px', marginBottom: '0.75rem', whiteSpace: 'pre-wrap' }}>
-                    {sub.content}
-                  </div>
-                )}
-
-                {sub.file_path && (
-                  <div style={{ marginBottom: '0.75rem' }}>
-                    <a href={`/uploads/${sub.file_path}`} className="btn btn-small btn-secondary" download>
+                  {sub.file_path && (
+                    <a href={`/uploads/${sub.file_path}`} className="btn btn-sm btn-outline mb-md" download>
                       📎 Download file
                     </a>
-                  </div>
-                )}
+                  )}
 
-                {sub.grade !== null && sub.feedback && (
-                  <div style={{ padding: '0.75rem', background: '#e8f5e9', borderRadius: '8px', marginBottom: '0.75rem' }}>
-                    <strong>Feedback:</strong>
-                    <p style={{ marginTop: '0.5rem', whiteSpace: 'pre-wrap' }}>{sub.feedback}</p>
-                  </div>
-                )}
+                  {sub.grade !== null && sub.feedback && (
+                    <div style={{ 
+                      padding: '0.875rem',
+                      background: 'rgba(16, 185, 129, 0.1)',
+                      borderRadius: 'var(--radius-md)',
+                      marginBottom: '0.75rem'
+                    }}>
+                      <div style={{ fontWeight: '600', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Your Feedback</div>
+                      <p style={{ margin: 0, whiteSpace: 'pre-wrap', fontSize: '0.9rem' }}>{sub.feedback}</p>
+                    </div>
+                  )}
 
-                <button
-                  className="btn btn-primary btn-small"
-                  onClick={() => setGradingSubmission(sub)}
-                >
-                  {sub.grade !== null ? 'Update Grade' : 'Grade Submission'}
-                </button>
-              </div>
-            ))
+                  <button
+                    className="btn btn-primary btn-sm"
+                    onClick={() => setGradingSubmission(sub)}
+                  >
+                    {sub.grade !== null ? '✏️ Update Grade' : '📊 Grade Submission'}
+                  </button>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       )}
 
+      {/* Grade Modal */}
       {gradingSubmission && (
         <GradeModal
           submission={gradingSubmission}
@@ -346,13 +382,27 @@ function GradeModal({ submission, maxPoints, onClose, onGrade }) {
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2 className="modal-title">
-            Grade: {submission.first_name} {submission.last_name}
+            Grade Submission
           </h2>
           <button className="modal-close" onClick={onClose}>×</button>
         </div>
 
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
+            <div style={{ 
+              padding: '0.875rem',
+              background: 'var(--neutral-50)',
+              borderRadius: 'var(--radius-md)',
+              marginBottom: '1rem'
+            }}>
+              <div style={{ fontWeight: '600' }}>
+                {submission.first_name} {submission.last_name}
+              </div>
+              {submission.username && (
+                <div style={{ fontSize: '0.85rem', color: 'var(--neutral-500)' }}>@{submission.username}</div>
+              )}
+            </div>
+
             <div className="form-group">
               <label className="form-label">Grade (out of {maxPoints}) *</label>
               <input
@@ -363,18 +413,18 @@ function GradeModal({ submission, maxPoints, onClose, onGrade }) {
                 min="0"
                 max={maxPoints}
                 required
-                style={{ fontSize: '1.2rem', textAlign: 'center' }}
+                style={{ fontSize: '1.5rem', textAlign: 'center', fontWeight: '700' }}
               />
             </div>
 
             <div className="form-group">
-              <label className="form-label">Feedback</label>
+              <label className="form-label">Feedback (optional)</label>
               <textarea
                 className="form-textarea"
                 placeholder="Provide feedback to the student..."
                 value={feedback}
                 onChange={(e) => setFeedback(e.target.value)}
-                rows="5"
+                rows="4"
               />
             </div>
           </div>
@@ -383,8 +433,8 @@ function GradeModal({ submission, maxPoints, onClose, onGrade }) {
             <button type="button" className="btn btn-secondary" onClick={onClose} disabled={loading}>
               Cancel
             </button>
-            <button type="submit" className="btn btn-primary" disabled={loading}>
-              {loading ? 'Saving...' : 'Save Grade'}
+            <button type="submit" className="btn btn-success" disabled={loading}>
+              {loading ? 'Saving...' : '✅ Save Grade'}
             </button>
           </div>
         </form>
@@ -394,4 +444,3 @@ function GradeModal({ submission, maxPoints, onClose, onGrade }) {
 }
 
 export default AssignmentDetail
-

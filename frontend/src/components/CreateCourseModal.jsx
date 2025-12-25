@@ -40,15 +40,16 @@ function CreateCourseModal({ user, onClose, onSuccess }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2 className="modal-title">Create New Course</h2>
+          <h2 className="modal-title">Create Course</h2>
           <button className="modal-close" onClick={onClose}>×</button>
         </div>
 
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
             {error && (
-              <div style={{ padding: '0.75rem', background: '#ffebee', color: '#c62828', borderRadius: '8px', marginBottom: '1rem' }}>
-                {error}
+              <div className="alert alert-error">
+                <span>⚠️</span>
+                <span>{error}</span>
               </div>
             )}
 
@@ -61,6 +62,7 @@ function CreateCourseModal({ user, onClose, onSuccess }) {
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 required
+                autoFocus
               />
             </div>
 
@@ -73,10 +75,12 @@ function CreateCourseModal({ user, onClose, onSuccess }) {
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows="4"
               />
+              <div className="form-hint">Describe what students will learn</div>
             </div>
 
-            <div style={{ padding: '0.75rem', background: 'var(--tg-theme-secondary-bg-color)', borderRadius: '8px', fontSize: '0.9rem' }}>
-              💡 After creating the course, you'll receive a unique access code that students can use to join.
+            <div className="alert alert-info">
+              <span>💡</span>
+              <span>After creating the course, you'll receive a unique access code that students can use to join.</span>
             </div>
           </div>
 
@@ -85,7 +89,7 @@ function CreateCourseModal({ user, onClose, onSuccess }) {
               Cancel
             </button>
             <button type="submit" className="btn btn-primary" disabled={loading}>
-              {loading ? 'Creating...' : 'Create Course'}
+              {loading ? 'Creating...' : '➕ Create Course'}
             </button>
           </div>
         </form>
@@ -95,4 +99,3 @@ function CreateCourseModal({ user, onClose, onSuccess }) {
 }
 
 export default CreateCourseModal
-

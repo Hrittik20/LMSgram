@@ -30,7 +30,8 @@ function CreateAssignmentModal({ course, user, onClose, onSuccess }) {
         title: formData.title,
         description: formData.description,
         due_date: formData.due_date || null,
-        max_points: formData.max_points
+        max_points: formData.max_points,
+        telegram_id: user.telegram_id
       })
       onSuccess()
     } catch (err) {
@@ -51,8 +52,9 @@ function CreateAssignmentModal({ course, user, onClose, onSuccess }) {
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
             {error && (
-              <div style={{ padding: '0.75rem', background: '#ffebee', color: '#c62828', borderRadius: '8px', marginBottom: '1rem' }}>
-                {error}
+              <div className="alert alert-error">
+                <span>⚠️</span>
+                <span>{error}</span>
               </div>
             )}
 
@@ -65,39 +67,48 @@ function CreateAssignmentModal({ course, user, onClose, onSuccess }) {
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 required
+                autoFocus
               />
             </div>
 
             <div className="form-group">
-              <label className="form-label">Description</label>
+              <label className="form-label">Instructions</label>
               <textarea
                 className="form-textarea"
-                placeholder="Instructions and requirements..."
+                placeholder="Describe the assignment requirements..."
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows="4"
               />
             </div>
 
-            <div className="form-group">
-              <label className="form-label">Due Date</label>
-              <input
-                type="datetime-local"
-                className="form-input"
-                value={formData.due_date}
-                onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
-              />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div className="form-group">
+                <label className="form-label">Due Date</label>
+                <input
+                  type="datetime-local"
+                  className="form-input"
+                  value={formData.due_date}
+                  onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Max Points</label>
+                <input
+                  type="number"
+                  className="form-input"
+                  value={formData.max_points}
+                  onChange={(e) => setFormData({ ...formData, max_points: parseInt(e.target.value) || 100 })}
+                  min="1"
+                  max="1000"
+                />
+              </div>
             </div>
 
-            <div className="form-group">
-              <label className="form-label">Maximum Points</label>
-              <input
-                type="number"
-                className="form-input"
-                value={formData.max_points}
-                onChange={(e) => setFormData({ ...formData, max_points: parseInt(e.target.value) })}
-                min="1"
-              />
+            <div className="alert alert-info">
+              <span>📢</span>
+              <span>Students will be notified about this new assignment via Telegram.</span>
             </div>
           </div>
 
@@ -106,7 +117,7 @@ function CreateAssignmentModal({ course, user, onClose, onSuccess }) {
               Cancel
             </button>
             <button type="submit" className="btn btn-primary" disabled={loading}>
-              {loading ? 'Creating...' : 'Create Assignment'}
+              {loading ? 'Creating...' : '➕ Create Assignment'}
             </button>
           </div>
         </form>
@@ -116,4 +127,3 @@ function CreateAssignmentModal({ course, user, onClose, onSuccess }) {
 }
 
 export default CreateAssignmentModal
-

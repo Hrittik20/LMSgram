@@ -67,22 +67,11 @@ function UploadMaterialModal({ course, user, onClose, onSuccess }) {
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
             {error && (
-              <div style={{ padding: '0.75rem', background: '#ffebee', color: '#c62828', borderRadius: '8px', marginBottom: '1rem' }}>
-                {error}
+              <div className="alert alert-error">
+                <span>⚠️</span>
+                <span>{error}</span>
               </div>
             )}
-
-            <div className="form-group">
-              <label className="form-label">Material Title *</label>
-              <input
-                type="text"
-                className="form-input"
-                placeholder="e.g., Lecture Notes - Week 1"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                required
-              />
-            </div>
 
             <div className="form-group">
               <label className="form-label">File *</label>
@@ -95,8 +84,8 @@ function UploadMaterialModal({ course, user, onClose, onSuccess }) {
                   required
                 />
                 <label htmlFor="material-file" className="file-input-label">
-                  <span>📎</span>
-                  <span>{file ? file.name : 'Choose file'}</span>
+                  <span style={{ fontSize: '1.5rem' }}>📄</span>
+                  <span>{file ? file.name : 'Click to choose file'}</span>
                 </label>
               </div>
               {file && (
@@ -106,8 +95,22 @@ function UploadMaterialModal({ course, user, onClose, onSuccess }) {
               )}
             </div>
 
-            <div style={{ padding: '0.75rem', background: 'var(--tg-theme-secondary-bg-color)', borderRadius: '8px', fontSize: '0.9rem' }}>
-              📁 Maximum file size: 50MB
+            <div className="form-group">
+              <label className="form-label">Material Title *</label>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="e.g., Lecture Notes - Week 1"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                required
+              />
+              <div className="form-hint">Give your file a descriptive name</div>
+            </div>
+
+            <div className="alert alert-info">
+              <span>📁</span>
+              <span>Maximum file size: 50MB. Students will be able to download this file.</span>
             </div>
           </div>
 
@@ -115,8 +118,8 @@ function UploadMaterialModal({ course, user, onClose, onSuccess }) {
             <button type="button" className="btn btn-secondary" onClick={onClose} disabled={loading}>
               Cancel
             </button>
-            <button type="submit" className="btn btn-primary" disabled={loading}>
-              {loading ? 'Uploading...' : 'Upload'}
+            <button type="submit" className="btn btn-primary" disabled={loading || !file}>
+              {loading ? 'Uploading...' : '⬆️ Upload Material'}
             </button>
           </div>
         </form>
@@ -126,4 +129,3 @@ function UploadMaterialModal({ course, user, onClose, onSuccess }) {
 }
 
 export default UploadMaterialModal
-

@@ -10,21 +10,21 @@ function Dashboard({ user }) {
     courses: 0,
     assignments: 0,
     upcomingAssignments: 0,
-    submissions: 0
+    pendingSubmissions: 0
   })
   const [loading, setLoading] = useState(true)
   const [recentCourses, setRecentCourses] = useState([])
+  const [upcomingTasks, setUpcomingTasks] = useState([])
 
   useEffect(() => {
-    loadStats()
+    loadDashboardData()
   }, [user])
 
-  const loadStats = async () => {
+  const loadDashboardData = async () => {
     try {
       const coursesRes = await axios.get(`${API_BASE_URL}/courses?telegram_id=${user.telegram_id}`)
       const courses = coursesRes.data
       
-      // Get recent courses (last 3)
       setRecentCourses(courses.slice(0, 3))
       
       let allAssignments = []
@@ -33,113 +33,193 @@ function Dashboard({ user }) {
       for (const course of courses) {
         try {
           const assignmentsRes = await axios.get(`${API_BASE_URL}/assignments/course/${course.id}`)
-          allAssignments = [...allAssignments, ...assignmentsRes.data.map(a => ({ ...a, courseName: course.title }))]
+          allAssignments = [
+            ...allAssignments, 
+            ...assignmentsRes.data.map(a => ({ 
+              ...a, 
+              courseName: course.title,
+              courseId: course.id 
+            }))
+          ]
         } catch (err) {
           console.error('Error loading assignments:', err)
         }
       }
 
-      const upcomingAssignments = allAssignments.filter(a => {
+      // Get upcoming assignments (due in next 7 days)
+      const upcoming = allAssignments
+        .filter(a => {
+          if (!a.due_date) return false
+          const dueDate = new Date(a.due_date)
+          const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
+          return dueDate >= today && dueDate <= weekFromNow
+        })
+        .sort((a, b) => new Date(a.due_date) - new Date(b.due_date))
+        .slice(0, 3)
+
+      setUpcomingTasks(upcoming)
+
+      const upcomingCount = allAssignments.filter(a => {
         if (!a.due_date) return false
         return new Date(a.due_date) >= today
-      })
+      }).length
 
       setStats({
         courses: courses.length,
         assignments: allAssignments.length,
-        upcomingAssignments: upcomingAssignments.length,
-        submissions: 0
+        upcomingAssignments: upcomingCount,
+        pendingSubmissions: 0
       })
     } catch (error) {
-      console.error('Error loading stats:', error)
+      console.error('Error loading dashboard:', error)
     } finally {
       setLoading(false)
     }
   }
 
   if (loading) {
-    return <div className="loading"><div className="spinner"></div></div>
+    return (
+      <div className="loading">
+        <div className="spinner"></div>
+        <div className="loading-text">Loading dashboard...</div>
+      </div>
+    )
+  }
+
+  const greeting = () => {
+    const hour = new Date().getHours()
+    if (hour < 12) return 'Good morning'
+    if (hour < 18) return 'Good afternoon'
+    return 'Good evening'
   }
 
   return (
-    <div className="fade-in">
-      <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>
-          Welcome back{user.first_name ? `, ${user.first_name}` : ''}! 👋
-        </h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '1rem' }}>
-          {user.role === 'teacher' ? 'Manage your courses and students' : 'Track your learning progress'}
-        </p>
+    <div className="page fade-in">
+      {/* Welcome Section */}
+      <div className="page-header">
+        <div className="page-title">
+          {greeting()}{user.first_name ? `, ${user.first_name}` : ''}! 👋
+        </div>
+        <div className="page-subtitle">
+          {user.role === 'teacher' 
+            ? 'Manage your courses and track student progress' 
+            : 'Keep track of your learning journey'}
+        </div>
       </div>
-      
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', 
-        gap: '1rem', 
-        marginBottom: '2rem' 
-      }}>
-        <div className="card" style={{ textAlign: 'center', padding: '1.5rem' }}>
-          <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>📚</div>
-          <div style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '0.25rem', color: 'var(--tg-theme-button-color)' }}>
-            {stats.courses}
-          </div>
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: '500' }}>
-            {stats.courses === 1 ? 'Course' : 'Courses'}
-          </div>
+
+      {/* Stats Grid */}
+      <div className="stats-grid">
+        <div className="stat-card" onClick={() => navigate('/courses')}>
+          <div className="stat-icon">📚</div>
+          <div className="stat-value">{stats.courses}</div>
+          <div className="stat-label">{stats.courses === 1 ? 'Course' : 'Courses'}</div>
         </div>
         
-        <div className="card" style={{ textAlign: 'center', padding: '1.5rem' }}>
-          <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>📝</div>
-          <div style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '0.25rem', color: 'var(--tg-theme-button-color)' }}>
-            {stats.assignments}
-          </div>
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: '500' }}>
-            {stats.assignments === 1 ? 'Assignment' : 'Assignments'}
-          </div>
+        <div className="stat-card" onClick={() => navigate('/assignments')}>
+          <div className="stat-icon">📝</div>
+          <div className="stat-value">{stats.assignments}</div>
+          <div className="stat-label">{stats.assignments === 1 ? 'Assignment' : 'Assignments'}</div>
         </div>
 
         {user.role === 'student' && (
-          <div className="card" style={{ textAlign: 'center', padding: '1.5rem' }}>
-            <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>⏰</div>
-            <div style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '0.25rem', color: 'var(--warning-color)' }}>
-              {stats.upcomingAssignments}
+          <>
+            <div className="stat-card stat-card-warning" onClick={() => navigate('/assignments')}>
+              <div className="stat-icon">⏰</div>
+              <div className="stat-value">{stats.upcomingAssignments}</div>
+              <div className="stat-label">Upcoming</div>
             </div>
-            <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: '500' }}>
-              Upcoming
+            
+            <div className="stat-card stat-card-success">
+              <div className="stat-icon">✅</div>
+              <div className="stat-value">{stats.assignments - stats.upcomingAssignments}</div>
+              <div className="stat-label">Completed</div>
             </div>
-          </div>
+          </>
+        )}
+
+        {user.role === 'teacher' && (
+          <>
+            <div className="stat-card stat-card-success">
+              <div className="stat-icon">👥</div>
+              <div className="stat-value">-</div>
+              <div className="stat-label">Students</div>
+            </div>
+            
+            <div className="stat-card stat-card-warning">
+              <div className="stat-icon">📊</div>
+              <div className="stat-value">-</div>
+              <div className="stat-label">To Grade</div>
+            </div>
+          </>
         )}
       </div>
 
-      {recentCourses.length > 0 && (
-        <div style={{ marginBottom: '2rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <h2 style={{ fontSize: '1.5rem' }}>Recent Courses</h2>
-            <button 
-              className="btn btn-secondary btn-small" 
-              onClick={() => navigate('/courses')}
-            >
+      {/* Upcoming Tasks - Only for students */}
+      {user.role === 'student' && upcomingTasks.length > 0 && (
+        <div className="section">
+          <div className="section-header">
+            <div className="section-title">📌 Upcoming Tasks</div>
+            <button className="btn btn-ghost btn-sm" onClick={() => navigate('/assignments')}>
               View All →
             </button>
           </div>
-          <div style={{ display: 'grid', gap: '1rem' }}>
+          
+          <div className="flex flex-col gap-sm">
+            {upcomingTasks.map(task => (
+              <div 
+                key={task.id} 
+                className="assignment-card"
+                onClick={() => navigate('/assignments')}
+              >
+                <div className="assignment-icon">📝</div>
+                <div className="assignment-info">
+                  <div className="assignment-title">{task.title}</div>
+                  <div className="assignment-course">{task.courseName}</div>
+                  {task.due_date && (
+                    <div className="assignment-due">
+                      <span>⏰</span>
+                      <span>Due {new Date(task.due_date).toLocaleDateString()}</span>
+                    </div>
+                  )}
+                </div>
+                <span style={{ color: 'var(--neutral-400)', fontSize: '1.25rem' }}>→</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Recent Courses */}
+      {recentCourses.length > 0 && (
+        <div className="section">
+          <div className="section-header">
+            <div className="section-title">📚 Your Courses</div>
+            <button className="btn btn-ghost btn-sm" onClick={() => navigate('/courses')}>
+              View All →
+            </button>
+          </div>
+          
+          <div className="course-grid">
             {recentCourses.map(course => (
               <div 
                 key={course.id} 
-                className="card" 
+                className="course-card"
                 onClick={() => navigate('/courses')}
-                style={{ cursor: 'pointer' }}
               >
-                <div className="card-title">{course.title}</div>
-                {course.description && (
-                  <div className="card-description" style={{ marginTop: '0.5rem' }}>
-                    {course.description.length > 100 
-                      ? `${course.description.substring(0, 100)}...` 
-                      : course.description}
+                <div className="course-card-header">
+                  <div className="course-card-icon">📖</div>
+                  <div className="course-card-info">
+                    <div className="course-card-title">{course.title}</div>
+                    {course.description && (
+                      <div className="course-card-desc">{course.description}</div>
+                    )}
                   </div>
-                )}
-                <div className="card-meta" style={{ marginTop: '0.75rem' }}>
-                  📅 {new Date(course.created_at).toLocaleDateString()}
+                </div>
+                <div className="course-card-footer">
+                  <span className="course-card-meta">
+                    Created {new Date(course.created_at).toLocaleDateString()}
+                  </span>
+                  <span className="course-card-arrow">→</span>
                 </div>
               </div>
             ))}
@@ -147,16 +227,76 @@ function Dashboard({ user }) {
         </div>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        <button className="btn btn-primary btn-large" onClick={() => navigate('/courses')}>
-          <span>📚</span>
-          <span>View All Courses</span>
-        </button>
-        <button className="btn btn-secondary btn-large" onClick={() => navigate('/assignments')}>
-          <span>📝</span>
-          <span>View Assignments</span>
-        </button>
+      {/* Quick Actions */}
+      <div className="section">
+        <div className="section-title mb-md">⚡ Quick Actions</div>
+        
+        <div className="quick-actions">
+          <button className="quick-action-btn" onClick={() => navigate('/courses')}>
+            <div className="quick-action-icon">📚</div>
+            <div className="quick-action-text">
+              <div className="quick-action-title">
+                {user.role === 'teacher' ? 'Manage Courses' : 'Browse Courses'}
+              </div>
+              <div className="quick-action-desc">
+                {user.role === 'teacher' ? 'Create and manage your courses' : 'View all your enrolled courses'}
+              </div>
+            </div>
+            <span className="quick-action-arrow">→</span>
+          </button>
+          
+          <button className="quick-action-btn" onClick={() => navigate('/assignments')}>
+            <div className="quick-action-icon" style={{ background: 'rgba(245, 158, 11, 0.15)' }}>📝</div>
+            <div className="quick-action-text">
+              <div className="quick-action-title">
+                {user.role === 'teacher' ? 'Grade Submissions' : 'View Assignments'}
+              </div>
+              <div className="quick-action-desc">
+                {user.role === 'teacher' ? 'Review and grade student work' : 'Check your pending tasks'}
+              </div>
+            </div>
+            <span className="quick-action-arrow">→</span>
+          </button>
+
+          {user.role === 'student' && (
+            <button className="quick-action-btn" onClick={() => navigate('/courses')}>
+              <div className="quick-action-icon" style={{ background: 'rgba(16, 185, 129, 0.15)' }}>🔗</div>
+              <div className="quick-action-text">
+                <div className="quick-action-title">Join a Course</div>
+                <div className="quick-action-desc">Enter an access code to join</div>
+              </div>
+              <span className="quick-action-arrow">→</span>
+            </button>
+          )}
+
+          {user.role === 'teacher' && (
+            <button className="quick-action-btn" onClick={() => navigate('/courses')}>
+              <div className="quick-action-icon" style={{ background: 'rgba(16, 185, 129, 0.15)' }}>➕</div>
+              <div className="quick-action-text">
+                <div className="quick-action-title">Create Course</div>
+                <div className="quick-action-desc">Start a new course</div>
+              </div>
+              <span className="quick-action-arrow">→</span>
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* Empty State for new users */}
+      {stats.courses === 0 && (
+        <div className="empty-state mt-xl">
+          <div className="empty-state-icon">🎓</div>
+          <div className="empty-state-title">Welcome to LMS!</div>
+          <div className="empty-state-text">
+            {user.role === 'teacher' 
+              ? 'Create your first course to get started with teaching'
+              : 'Join a course using an access code from your teacher'}
+          </div>
+          <button className="btn btn-primary btn-lg mt-md" onClick={() => navigate('/courses')}>
+            {user.role === 'teacher' ? '➕ Create Course' : '🔗 Join Course'}
+          </button>
+        </div>
+      )}
     </div>
   )
 }
