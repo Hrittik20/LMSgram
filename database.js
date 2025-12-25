@@ -103,6 +103,32 @@ function initDatabase() {
       )
     `);
 
+    // Course teachers (Many-to-Many: courses ↔ teachers)
+    db.run(`
+      CREATE TABLE IF NOT EXISTS course_teachers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        course_id INTEGER NOT NULL,
+        teacher_id INTEGER NOT NULL,
+        added_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (course_id) REFERENCES courses(id),
+        FOREIGN KEY (teacher_id) REFERENCES users(id),
+        UNIQUE(course_id, teacher_id)
+      )
+    `);
+
+    // Comments table (for announcements)
+    db.run(`
+      CREATE TABLE IF NOT EXISTS comments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        announcement_id INTEGER NOT NULL,
+        user_id INTEGER NOT NULL,
+        content TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (announcement_id) REFERENCES announcements(id),
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )
+    `);
+
     console.log('Database initialized successfully');
   });
 }
@@ -167,10 +193,17 @@ const courseQueries = {
 
   findByTeacher: (teacherId) => {
     return new Promise((resolve, reject) => {
-      db.all('SELECT * FROM courses WHERE teacher_id = ?', [teacherId], (err, rows) => {
-        if (err) reject(err);
-        else resolve(rows);
-      });
+      // Get courses where user is in course_teachers OR is the original creator
+      db.all(
+        `SELECT DISTINCT c.* FROM courses c
+         LEFT JOIN course_teachers ct ON c.id = ct.course_id
+         WHERE ct.teacher_id = ? OR c.teacher_id = ?`,
+        [teacherId, teacherId],
+        (err, rows) => {
+          if (err) reject(err);
+          else resolve(rows);
+        }
+      );
     });
   },
 
@@ -279,6 +312,15 @@ const submissionQueries = {
     });
   },
 
+  findById: (submissionId) => {
+    return new Promise((resolve, reject) => {
+      db.get('SELECT * FROM submissions WHERE id = ?', [submissionId], (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      });
+    });
+  },
+
   findByAssignmentAndUser: (assignmentId, userId) => {
     return new Promise((resolve, reject) => {
       db.get(
@@ -337,6 +379,15 @@ const announcementQueries = {
     });
   },
 
+  findById: (announcementId) => {
+    return new Promise((resolve, reject) => {
+      db.get('SELECT * FROM announcements WHERE id = ?', [announcementId], (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      });
+    });
+  },
+
   findByCourse: (courseId) => {
     return new Promise((resolve, reject) => {
       db.all(
@@ -380,6 +431,109 @@ const materialQueries = {
   }
 };
 
+// Course teachers queries (for multiple teachers per course)
+const courseTeacherQueries = {
+  add: (courseId, teacherId) => {
+    return new Promise((resolve, reject) => {
+      db.run(
+        'INSERT OR IGNORE INTO course_teachers (course_id, teacher_id) VALUES (?, ?)',
+        [courseId, teacherId],
+        function(err) {
+          if (err) reject(err);
+          else resolve(this.lastID);
+        }
+      );
+    });
+  },
+
+  getTeachers: (courseId) => {
+    return new Promise((resolve, reject) => {
+      db.all(
+        `SELECT u.* FROM users u
+         INNER JOIN course_teachers ct ON u.id = ct.teacher_id
+         WHERE ct.course_id = ?`,
+        [courseId],
+        (err, rows) => {
+          if (err) reject(err);
+          else resolve(rows);
+        }
+      );
+    });
+  },
+
+  isTeacher: (courseId, userId) => {
+    return new Promise((resolve, reject) => {
+      db.get(
+        `SELECT 1 FROM course_teachers WHERE course_id = ? AND teacher_id = ?`,
+        [courseId, userId],
+        (err, row) => {
+          if (err) reject(err);
+          else resolve(!!row);
+        }
+      );
+    });
+  },
+
+  remove: (courseId, teacherId) => {
+    return new Promise((resolve, reject) => {
+      db.run(
+        'DELETE FROM course_teachers WHERE course_id = ? AND teacher_id = ?',
+        [courseId, teacherId],
+        (err) => {
+          if (err) reject(err);
+          else resolve();
+        }
+      );
+    });
+  }
+};
+
+// Comments queries
+const commentQueries = {
+  create: (announcementId, userId, content) => {
+    return new Promise((resolve, reject) => {
+      db.run(
+        'INSERT INTO comments (announcement_id, user_id, content) VALUES (?, ?, ?)',
+        [announcementId, userId, content],
+        function(err) {
+          if (err) reject(err);
+          else resolve(this.lastID);
+        }
+      );
+    });
+  },
+
+  findByAnnouncement: (announcementId) => {
+    return new Promise((resolve, reject) => {
+      db.all(
+        `SELECT c.*, u.first_name, u.last_name, u.username, u.role 
+         FROM comments c
+         INNER JOIN users u ON c.user_id = u.id
+         WHERE c.announcement_id = ?
+         ORDER BY c.created_at ASC`,
+        [announcementId],
+        (err, rows) => {
+          if (err) reject(err);
+          else resolve(rows);
+        }
+      );
+    });
+  },
+
+  delete: (commentId, userId) => {
+    return new Promise((resolve, reject) => {
+      db.run(
+        'DELETE FROM comments WHERE id = ? AND user_id = ?',
+        [commentId, userId],
+        function(err) {
+          if (err) reject(err);
+          else resolve(this.changes > 0);
+        }
+      );
+    });
+  }
+};
+
 module.exports = {
   db,
   initDatabase,
@@ -389,8 +543,21 @@ module.exports = {
   assignmentQueries,
   submissionQueries,
   announcementQueries,
-  materialQueries
+  materialQueries,
+  courseTeacherQueries,
+  commentQueries
 };
+
+
+
+
+
+
+
+
+
+
+
 
 
 

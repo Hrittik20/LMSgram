@@ -4,7 +4,8 @@ const {
   announcementQueries,
   userQueries,
   courseQueries,
-  enrollmentQueries
+  enrollmentQueries,
+  courseTeacherQueries
 } = require('../database');
 const { sendNotification } = require('../bot');
 
@@ -29,8 +30,19 @@ router.post('/', async (req, res) => {
     }
 
     const user = await userQueries.findByTelegramId(telegram_id);
-    if (!user || user.role !== 'teacher') {
-      return res.status(403).json({ error: 'Only teachers can create announcements' });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Check if user is a teacher of this course
+    const isTeacher = await courseTeacherQueries.isTeacher(course_id, user.id);
+    const course = await courseQueries.findById(course_id);
+    
+    // Also check if user is the original creator
+    const isCreator = course && course.teacher_id === user.id;
+    
+    if (!isTeacher && !isCreator) {
+      return res.status(403).json({ error: 'Only course teachers can create announcements' });
     }
 
     const announcementId = await announcementQueries.create(course_id, title, content);
@@ -57,6 +69,17 @@ router.post('/', async (req, res) => {
 });
 
 module.exports = router;
+
+
+
+
+
+
+
+
+
+
+
 
 
 

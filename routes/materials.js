@@ -5,7 +5,9 @@ const path = require('path');
 const fs = require('fs');
 const { 
   materialQueries,
-  userQueries
+  userQueries,
+  courseQueries,
+  courseTeacherQueries
 } = require('../database');
 
 // Create uploads directory if it doesn't exist
@@ -51,8 +53,17 @@ router.post('/', upload.single('file'), async (req, res) => {
     }
 
     const user = await userQueries.findByTelegramId(telegram_id);
-    if (!user || user.role !== 'teacher') {
-      return res.status(403).json({ error: 'Only teachers can upload materials' });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Check if user is a teacher of this course
+    const isTeacher = await courseTeacherQueries.isTeacher(course_id, user.id);
+    const course = await courseQueries.findById(course_id);
+    const isCreator = course && course.teacher_id === user.id;
+
+    if (!isTeacher && !isCreator) {
+      return res.status(403).json({ error: 'Only course teachers can upload materials' });
     }
 
     const fileType = path.extname(req.file.originalname);
@@ -77,6 +88,17 @@ router.post('/', upload.single('file'), async (req, res) => {
 });
 
 module.exports = router;
+
+
+
+
+
+
+
+
+
+
+
 
 
 

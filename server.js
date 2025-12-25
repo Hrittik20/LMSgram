@@ -4,82 +4,125 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const path = require('path');
 const { initDatabase } = require('./database');
-const { initBot } = require('./bot');
-
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-// Middleware
-const corsOptions = {
-  origin: process.env.FRONTEND_URL || '*',
-  credentials: true,
-  optionsSuccessStatus: 200
-};
-app.use(cors(corsOptions));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use('/uploads', express.static('uploads'));
+const { initBot, setWebhook, getBot } = require('./bot');
 
 // Initialize database
 initDatabase();
 
-// Initialize Telegram bot
-if (process.env.TELEGRAM_BOT_TOKEN) {
-  const webAppUrl = process.env.WEBAPP_URL || `http://localhost:${PORT}`;
-  initBot(process.env.TELEGRAM_BOT_TOKEN, webAppUrl);
-} else {
-  console.warn('⚠️  TELEGRAM_BOT_TOKEN not set. Bot will not start.');
-  console.warn('Please create a .env file with your bot token.');
-}
+// Initialize Express app
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-// API Routes
-const userRoutes = require('./routes/users');
-const courseRoutes = require('./routes/courses');
-const assignmentRoutes = require('./routes/assignments');
-const announcementRoutes = require('./routes/announcements');
-const materialRoutes = require('./routes/materials');
+// Middleware
+app.use(cors());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
-app.use('/api/users', userRoutes);
-app.use('/api/courses', courseRoutes);
-app.use('/api/assignments', assignmentRoutes);
-app.use('/api/announcements', announcementRoutes);
-app.use('/api/materials', materialRoutes);
+// Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'LMS API is running' });
+// Routes
+app.use('/api/users', require('./routes/users'));
+app.use('/api/courses', require('./routes/courses'));
+app.use('/api/assignments', require('./routes/assignments'));
+app.use('/api/announcements', require('./routes/announcements'));
+app.use('/api/materials', require('./routes/materials'));
+app.use('/api/comments', require('./routes/comments'));
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', message: 'Server is running' });
 });
 
-// Serve frontend in production
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, 'frontend/dist')));
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'frontend/dist/index.html'));
-  });
-}
+// Webhook endpoint for Telegram (production mode)
+app.post(`/webhook/${process.env.TELEGRAM_BOT_TOKEN}`, (req, res) => {
+  const bot = getBot();
+  if (bot) {
+    bot.processUpdate(req.body);
+  }
+  res.sendStatus(200);
+});
 
-app.listen(PORT, () => {
-  console.log(`
-╔══════════════════════════════════════╗
-║   🎓 LMS Telegram Bot Server       ║
-╚══════════════════════════════════════╝
+// Webhook info endpoint (for debugging)
+app.get('/webhook-info', async (req, res) => {
+  const { getWebhookInfo } = require('./bot');
+  const info = await getWebhookInfo();
+  res.json(info || { message: 'Webhook not configured' });
+});
 
-✅ Server running on port ${PORT}
-✅ Database initialized
-${process.env.TELEGRAM_BOT_TOKEN ? '✅ Telegram bot active' : '⚠️  Telegram bot inactive'}
-
-API Endpoints:
-  • GET  /api/health
-  • POST /api/users
-  • GET  /api/courses
-  • POST /api/courses
-  • POST /api/assignments
+// Manual webhook setup endpoint (useful when changing bot token)
+app.post('/setup-webhook', async (req, res) => {
+  const { setWebhook } = require('./bot');
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const webhookUrl = process.env.WEBHOOK_URL;
   
-Ready to serve! 🚀
-  `);
+  if (!token || !webhookUrl) {
+    return res.status(400).json({ 
+      error: 'TELEGRAM_BOT_TOKEN and WEBHOOK_URL must be set in environment variables' 
+    });
+  }
+  
+  try {
+    const success = await setWebhook(token, webhookUrl);
+    if (success) {
+      res.json({ 
+        success: true, 
+        message: 'Webhook set successfully',
+        webhookUrl: webhookUrl 
+      });
+    } else {
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to set webhook' 
+      });
+    }
+  } catch (error) {
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
 });
 
-module.exports = app;
+// Initialize Telegram bot
+if (!process.env.TELEGRAM_BOT_TOKEN) {
+  console.error('⚠️  WARNING: TELEGRAM_BOT_TOKEN not found in environment variables!');
+  console.error('Please create a .env file with your bot token.');
+} else {
+  const webAppUrl = process.env.WEB_APP_URL || 'http://localhost:5173';
+  const useWebhook = process.env.USE_WEBHOOK === 'true';
+  const webhookUrl = process.env.WEBHOOK_URL;
+  
+  // Warn if URL is not HTTPS
+  if (!webAppUrl.startsWith('https://')) {
+    console.warn('⚠️  WARNING: WEB_APP_URL is not HTTPS!');
+    console.warn('Telegram requires HTTPS for Web App buttons.');
+    console.warn('For local development, use ngrok:');
+    console.warn('  1. Run: ngrok http 5173');
+    console.warn('  2. Copy the HTTPS URL (e.g., https://abc123.ngrok-free.app)');
+    console.warn('  3. Update .env: WEB_APP_URL=https://your-ngrok-url.ngrok-free.app');
+    console.warn('  4. Restart the server');
+    console.warn('');
+    console.warn('Bot will still work, but Web App button will be disabled.');
+  }
+  
+  // Initialize bot
+  initBot(process.env.TELEGRAM_BOT_TOKEN, webAppUrl, useWebhook, webhookUrl);
+  
+  // Set up webhook if in production mode
+  if (useWebhook && webhookUrl) {
+    setWebhook(process.env.TELEGRAM_BOT_TOKEN, webhookUrl).then(success => {
+      if (success) {
+        console.log('✅ Webhook configured successfully');
+      } else {
+        console.error('❌ Failed to configure webhook');
+      }
+    });
+  }
+}
 
-
-
+// Start server
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📱 Make sure your bot token is set in .env file`);
+});

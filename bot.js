@@ -3,8 +3,16 @@ const { userQueries } = require('./database');
 
 let bot;
 
-function initBot(token, webAppUrl) {
-  bot = new TelegramBot(token, { polling: true });
+function initBot(token, webAppUrl, useWebhook = false, webhookUrl = null) {
+  // Use webhook mode for production, polling for local development
+  if (useWebhook && webhookUrl) {
+    bot = new TelegramBot(token);
+    // Webhook will be set up separately
+    console.log('Bot initialized in webhook mode');
+  } else {
+    bot = new TelegramBot(token, { polling: true });
+    console.log('Bot initialized in polling mode (local development)');
+  }
 
   // Start command
   bot.onText(/\/start/, async (msg) => {
@@ -26,24 +34,41 @@ function initBot(token, webAppUrl) {
         );
       }
 
-      const keyboard = {
-        inline_keyboard: [
-          [{ text: '📚 Open LMS', web_app: { url: webAppUrl } }],
-          [{ text: '👨‍🏫 Become a Teacher', callback_data: 'become_teacher' }]
-        ]
+      // Check if Web App URL is HTTPS (required by Telegram)
+      const isHttps = webAppUrl && webAppUrl.startsWith('https://');
+      
+      let keyboard = {
+        inline_keyboard: []
       };
 
-      bot.sendMessage(
-        chatId,
-        `Welcome to LMS Bot! 🎓\n\n` +
+      if (isHttps) {
+        // Add Web App button if URL is HTTPS
+        keyboard.inline_keyboard.push([
+          { text: '📚 Open LMS', web_app: { url: webAppUrl } }
+        ]);
+      }
+      
+      // Always add the teacher button
+      keyboard.inline_keyboard.push([
+        { text: '👨‍🏫 Become a Teacher', callback_data: 'become_teacher' }
+      ]);
+
+      let welcomeMessage = `Welcome to LMS Bot! 🎓\n\n` +
         `This is your personal learning management system.\n\n` +
         `✅ Join courses\n` +
         `✅ Submit assignments\n` +
         `✅ Track your grades\n` +
-        `✅ Receive notifications\n\n` +
-        `Click the button below to get started!`,
-        { reply_markup: keyboard }
-      );
+        `✅ Receive notifications\n\n`;
+
+      if (isHttps) {
+        welcomeMessage += `Click the button below to get started!`;
+      } else {
+        welcomeMessage += `⚠️ Web App is not configured.\n` +
+          `For local development, use ngrok to create an HTTPS tunnel.\n` +
+          `See NEXT_STEPS.md for instructions.`;
+      }
+
+      bot.sendMessage(chatId, welcomeMessage, { reply_markup: keyboard });
     } catch (error) {
       console.error('Error in /start command:', error);
       bot.sendMessage(chatId, 'Sorry, something went wrong. Please try again.');
@@ -137,13 +162,66 @@ function initBot(token, webAppUrl) {
   return bot;
 }
 
-function sendNotification(telegramId, message) {
-  if (bot) {
-    bot.sendMessage(telegramId, message);
+// Set up webhook for production
+async function setWebhook(token, webhookUrl) {
+  if (!bot) {
+    bot = new TelegramBot(token);
+  }
+  
+  try {
+    await bot.setWebHook(webhookUrl);
+    console.log(`✅ Webhook set to: ${webhookUrl}`);
+    return true;
+  } catch (error) {
+    console.error('❌ Error setting webhook:', error);
+    return false;
   }
 }
 
-module.exports = { initBot, sendNotification };
+// Get webhook info
+async function getWebhookInfo() {
+  if (!bot) return null;
+  
+  try {
+    const info = await bot.getWebHookInfo();
+    return info;
+  } catch (error) {
+    console.error('Error getting webhook info:', error);
+    return null;
+  }
+}
+
+async function sendNotification(telegramId, message, options = {}) {
+  if (!bot) {
+    console.error('Bot not initialized');
+    return;
+  }
+
+  try {
+    await bot.sendMessage(telegramId, message, {
+      parse_mode: 'Markdown',
+      ...options
+    });
+  } catch (error) {
+    // Handle common errors
+    if (error.response?.statusCode === 403) {
+      console.log(`User ${telegramId} blocked the bot`);
+    } else {
+      console.error(`Error sending notification to ${telegramId}:`, error.message);
+    }
+  }
+}
+
+module.exports = { initBot, sendNotification, setWebhook, getWebhookInfo, getBot: () => bot };
+
+
+
+
+
+
+
+
+
 
 
 

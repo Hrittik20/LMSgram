@@ -4,7 +4,8 @@ const { v4: uuidv4 } = require('uuid');
 const { 
   courseQueries, 
   userQueries, 
-  enrollmentQueries 
+  enrollmentQueries,
+  courseTeacherQueries
 } = require('../database');
 
 // Get all courses for a user
@@ -72,6 +73,9 @@ router.post('/', async (req, res) => {
     const accessCode = uuidv4().substring(0, 8).toUpperCase();
     
     const courseId = await courseQueries.create(title, description, accessCode, user.id);
+    // Add creator as teacher in course_teachers table
+    await courseTeacherQueries.add(courseId, user.id);
+    
     const course = await courseQueries.findById(courseId);
     
     res.status(201).json(course);
@@ -127,7 +131,70 @@ router.get('/:id/students', async (req, res) => {
   }
 });
 
+// Get teachers in a course
+router.get('/:id/teachers', async (req, res) => {
+  try {
+    const teachers = await courseTeacherQueries.getTeachers(req.params.id);
+    res.json(teachers);
+  } catch (error) {
+    console.error('Error fetching teachers:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Add teacher to course
+router.post('/:id/teachers', async (req, res) => {
+  try {
+    const { telegram_id } = req.body;
+    const courseId = req.params.id;
+
+    if (!telegram_id) {
+      return res.status(400).json({ error: 'telegram_id is required' });
+    }
+
+    const user = await userQueries.findByTelegramId(telegram_id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (user.role !== 'teacher') {
+      return res.status(403).json({ error: 'User must be a teacher' });
+    }
+
+    // Check if requester is a teacher of the course
+    const requester = await userQueries.findByTelegramId(telegram_id);
+    const isRequesterTeacher = await courseTeacherQueries.isTeacher(courseId, requester.id);
+    
+    // Also check if requester is the original creator (teacher_id)
+    const course = await courseQueries.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ error: 'Course not found' });
+    }
+
+    if (!isRequesterTeacher && course.teacher_id !== requester.id) {
+      return res.status(403).json({ error: 'Only course teachers can add other teachers' });
+    }
+
+    await courseTeacherQueries.add(courseId, user.id);
+    res.json({ message: 'Teacher added successfully' });
+  } catch (error) {
+    console.error('Error adding teacher:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 module.exports = router;
+
+
+
+
+
+
+
+
+
+
+
 
 
 

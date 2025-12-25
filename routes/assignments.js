@@ -7,7 +7,8 @@ const {
   assignmentQueries, 
   submissionQueries,
   userQueries,
-  courseQueries
+  courseQueries,
+  courseTeacherQueries
 } = require('../database');
 const { sendNotification } = require('../bot');
 
@@ -146,8 +147,29 @@ router.post('/submissions/:id/grade', async (req, res) => {
     }
 
     const user = await userQueries.findByTelegramId(telegram_id);
-    if (!user || user.role !== 'teacher') {
-      return res.status(403).json({ error: 'Only teachers can grade submissions' });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Get submission to find assignment
+    const submission = await submissionQueries.findById(submissionId);
+    if (!submission) {
+      return res.status(404).json({ error: 'Submission not found' });
+    }
+
+    // Get assignment to find course_id
+    const assignment = await assignmentQueries.findById(submission.assignment_id);
+    if (!assignment) {
+      return res.status(404).json({ error: 'Assignment not found' });
+    }
+
+    // Check if user is a teacher of this course
+    const isTeacher = await courseTeacherQueries.isTeacher(assignment.course_id, user.id);
+    const course = await courseQueries.findById(assignment.course_id);
+    const isCreator = course && course.teacher_id === user.id;
+
+    if (!isTeacher && !isCreator) {
+      return res.status(403).json({ error: 'Only course teachers can grade submissions' });
     }
 
     await submissionQueries.grade(submissionId, grade, feedback);
@@ -187,6 +209,17 @@ router.get('/:id/my-submission', async (req, res) => {
 });
 
 module.exports = router;
+
+
+
+
+
+
+
+
+
+
+
 
 
 
