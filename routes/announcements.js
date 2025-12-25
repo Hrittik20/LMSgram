@@ -47,8 +47,7 @@ router.post('/', async (req, res) => {
 
     const announcementId = await announcementQueries.create(course_id, title, content);
     
-    // Notify all enrolled students
-    const course = await courseQueries.findById(course_id);
+    // Notify all enrolled students (course already fetched above)
     const students = await enrollmentQueries.getStudents(course_id);
     
     students.forEach(student => {
