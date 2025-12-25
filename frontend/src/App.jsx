@@ -5,7 +5,32 @@ import Dashboard from './components/Dashboard'
 import Courses from './components/Courses'
 import Assignments from './components/Assignments'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
+// Auto-detect API URL based on environment
+const getApiBaseUrl = () => {
+  // If explicitly set in environment, use it
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL
+  }
+  
+  // In development, use proxy
+  if (import.meta.env.DEV) {
+    return '/api'
+  }
+  
+  // In production, try to detect from current origin
+  // If frontend is on Vercel, backend might be on same domain or different
+  const origin = window.location.origin
+  
+  // If we're on a Vercel domain, try to construct backend URL
+  // This assumes backend might be on same domain with /api or different subdomain
+  // You should set VITE_API_URL in Vercel environment variables!
+  console.warn('⚠️ VITE_API_URL not set! Using fallback:', origin + '/api')
+  console.warn('Please set VITE_API_URL in Vercel environment variables to your backend URL')
+  
+  return '/api' // Fallback - will only work if backend is on same domain
+}
+
+const API_BASE_URL = getApiBaseUrl()
 
 // Bottom Navigation Component
 function BottomNav() {
@@ -72,11 +97,39 @@ function App() {
 
   const initializeApp = async () => {
     try {
+      console.log('Initializing app...')
+      console.log('API_BASE_URL:', API_BASE_URL)
+      console.log('Environment:', import.meta.env.MODE)
+      
+      // Test API connection first
+      try {
+        console.log('Testing API connection...')
+        const healthCheck = await axios.get(`${API_BASE_URL.replace('/api', '')}/health`, {
+          timeout: 5000
+        }).catch(() => {
+          // Try with /api prefix
+          return axios.get(`${API_BASE_URL}/health`, { timeout: 5000 })
+        }).catch(() => null)
+        
+        if (healthCheck) {
+          console.log('✅ API connection successful')
+        } else {
+          console.warn('⚠️ API health check failed - API might be unreachable')
+        }
+      } catch (err) {
+        console.warn('⚠️ API health check error:', err.message)
+      }
+      
       // Get user from Telegram WebApp
       const tg = window.Telegram?.WebApp
+      console.log('Telegram WebApp available:', !!tg)
+      
       if (tg) {
         tg.ready()
         tg.expand()
+        
+        console.log('Telegram initDataUnsafe:', tg.initDataUnsafe)
+        console.log('Telegram user:', tg.initDataUnsafe?.user)
         
         // Set Telegram theme colors
         if (tg.themeParams) {
@@ -98,44 +151,99 @@ function App() {
 
         const initUser = tg.initDataUnsafe?.user
         if (initUser) {
+          console.log('Loading user from Telegram:', initUser.id)
           await loadUser(initUser.id.toString(), initUser)
         } else {
+          console.warn('No Telegram user found, using fallback')
           // Development fallback
           await loadUser('123456789', null)
         }
       } else {
+        console.warn('Telegram WebApp not available, using development mode')
         // Development mode - use test user
         await loadUser('123456789', null)
       }
     } catch (err) {
       console.error('App initialization error:', err)
-      setError('Failed to initialize app')
+      console.error('Error stack:', err.stack)
+      setError(`Failed to initialize app: ${err.message || 'Unknown error'}`)
     } finally {
       setLoading(false)
+      console.log('App initialization complete')
     }
   }
 
   const loadUser = async (telegramId, initUser) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/users`, {
-        telegram_id: telegramId
-      })
-      setUser(response.data)
-    } catch (error) {
-      // Create user if doesn't exist
+      console.log('Loading user with telegram_id:', telegramId)
+      console.log('API_BASE_URL:', API_BASE_URL)
+      
+      // Add timeout to prevent infinite loading
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+      
       try {
         const response = await axios.post(`${API_BASE_URL}/users`, {
-          telegram_id: telegramId,
-          username: initUser?.username || '',
-          first_name: initUser?.first_name || 'Test',
-          last_name: initUser?.last_name || 'User',
-          role: 'student'
+          telegram_id: telegramId
+        }, {
+          signal: controller.signal,
+          timeout: 10000
         })
+        clearTimeout(timeoutId)
+        console.log('User loaded:', response.data)
         setUser(response.data)
-      } catch (err) {
-        console.error('Error creating user:', err)
-        setError('Failed to load user profile')
+      } catch (error) {
+        clearTimeout(timeoutId)
+        
+        // If 404, user doesn't exist - create them
+        if (error.response?.status === 404 || error.response?.status === 400) {
+          console.log('User not found, creating new user...')
+          try {
+            const response = await axios.post(`${API_BASE_URL}/users`, {
+              telegram_id: telegramId,
+              username: initUser?.username || '',
+              first_name: initUser?.first_name || 'Test',
+              last_name: initUser?.last_name || 'User',
+              role: 'student'
+            }, {
+              signal: controller.signal,
+              timeout: 10000
+            })
+            console.log('User created:', response.data)
+            setUser(response.data)
+          } catch (createErr) {
+            console.error('Error creating user:', createErr)
+            console.error('Error details:', {
+              message: createErr.message,
+              response: createErr.response?.data,
+              status: createErr.response?.status,
+              url: createErr.config?.url
+            })
+            setError(`Failed to create user: ${createErr.message || 'Network error'}`)
+          }
+        } else {
+          // Other errors
+          console.error('Error loading user:', error)
+          console.error('Error details:', {
+            message: error.message,
+            response: error.response?.data,
+            status: error.response?.status,
+            url: error.config?.url,
+            code: error.code
+          })
+          
+          if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+            setError('Request timed out. Please check your connection and try again.')
+          } else if (error.code === 'ERR_NETWORK' || error.message.includes('Network Error')) {
+            setError(`Cannot connect to server. API URL: ${API_BASE_URL}`)
+          } else {
+            setError(`Failed to load user: ${error.response?.data?.error || error.message || 'Unknown error'}`)
+          }
+        }
       }
+    } catch (err) {
+      console.error('Unexpected error in loadUser:', err)
+      setError(`Unexpected error: ${err.message || 'Unknown error'}`)
     }
   }
 
@@ -154,9 +262,29 @@ function App() {
         <div className="empty-state">
           <div className="empty-state-icon">⚠️</div>
           <div className="empty-state-title">Something went wrong</div>
-          <div className="empty-state-text">{error}</div>
+          <div className="empty-state-text" style={{ 
+            fontSize: '0.9rem', 
+            maxWidth: '400px',
+            wordBreak: 'break-word',
+            marginBottom: '1rem'
+          }}>
+            {error}
+          </div>
+          <div style={{ 
+            fontSize: '0.8rem', 
+            color: 'var(--neutral-500)',
+            marginBottom: '1rem',
+            padding: '0.75rem',
+            background: 'var(--neutral-50)',
+            borderRadius: 'var(--radius-md)',
+            maxWidth: '400px'
+          }}>
+            <strong>Debug Info:</strong><br/>
+            API URL: {API_BASE_URL}<br/>
+            Telegram WebApp: {window.Telegram?.WebApp ? 'Available' : 'Not available'}
+          </div>
           <button className="btn btn-primary mt-lg" onClick={() => window.location.reload()}>
-            Try Again
+            🔄 Try Again
           </button>
         </div>
       </div>
