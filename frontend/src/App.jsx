@@ -211,70 +211,122 @@ function App() {
 
   if (loading) {
     return (
-      <div className="loading">
-        <div className="spinner"></div>
-        <div className="loading-text">{loadingStatus}</div>
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        gap: '16px',
+        backgroundColor: '#ffffff',
+        color: '#111827',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+      }}>
+        <div style={{
+          width: '44px',
+          height: '44px',
+          border: '3px solid #e5e7eb',
+          borderTopColor: '#3378ff',
+          borderRadius: '50%',
+          animation: 'spin 0.8s linear infinite'
+        }}></div>
+        <div style={{ fontSize: '0.9rem', color: '#6b7280' }}>{loadingStatus}</div>
+        <style>{`
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+        `}</style>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="page">
-        <div className="empty-state">
-          <div className="empty-state-icon">⚠️</div>
-          <div className="empty-state-title">Connection Error</div>
-          <div className="empty-state-text" style={{ 
-            fontSize: '0.9rem', 
-            maxWidth: '350px',
-            whiteSpace: 'pre-wrap',
-            marginBottom: '1rem'
-          }}>
-            {error}
-          </div>
-          <div style={{ 
-            fontSize: '0.75rem', 
-            color: 'var(--neutral-500)',
-            marginBottom: '1rem',
-            padding: '0.75rem',
-            background: 'var(--neutral-50)',
-            borderRadius: 'var(--radius-md)',
-            maxWidth: '350px',
-            textAlign: 'left'
-          }}>
-            <strong>Debug:</strong><br/>
-            API: {debugInfo.apiUrl || 'N/A'}<br/>
-            Telegram: {debugInfo.telegramAvailable ? 'Yes' : 'No'}<br/>
-            User ID: {debugInfo.telegramUser?.id || 'N/A'}<br/>
-            Env: {debugInfo.env || 'N/A'}
-          </div>
-          <button className="btn btn-primary" onClick={() => window.location.reload()}>
-            🔄 Try Again
-          </button>
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        padding: '24px',
+        backgroundColor: '#ffffff',
+        color: '#111827',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        textAlign: 'center'
+      }}>
+        <div style={{ fontSize: '4rem', marginBottom: '16px' }}>⚠️</div>
+        <div style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '8px' }}>Connection Error</div>
+        <div style={{ 
+          fontSize: '0.9rem', 
+          maxWidth: '350px',
+          whiteSpace: 'pre-wrap',
+          marginBottom: '16px',
+          color: '#4b5563'
+        }}>
+          {error}
         </div>
+        <div style={{ 
+          fontSize: '0.75rem', 
+          color: '#6b7280',
+          marginBottom: '16px',
+          padding: '12px',
+          background: '#f9fafb',
+          borderRadius: '8px',
+          maxWidth: '350px',
+          textAlign: 'left'
+        }}>
+          <strong>Debug:</strong><br/>
+          API: {debugInfo.apiUrl || 'N/A'}<br/>
+          Telegram: {debugInfo.telegramAvailable ? 'Yes' : 'No'}<br/>
+          User ID: {debugInfo.telegramUser?.id || 'N/A'}<br/>
+          Env: {debugInfo.env || 'N/A'}
+        </div>
+        <button 
+          onClick={() => window.location.reload()}
+          style={{
+            padding: '12px 24px',
+            fontSize: '1rem',
+            fontWeight: '600',
+            backgroundColor: '#3378ff',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer'
+          }}
+        >
+          🔄 Try Again
+        </button>
       </div>
     )
   }
 
   if (!user) {
     return (
-      <div className="page">
-        <div className="empty-state">
-          <div className="empty-state-icon">📱</div>
-          <div className="empty-state-title">Open from Telegram</div>
-          <div className="empty-state-text">
-            Please open this app from the Telegram bot
-          </div>
-          <div style={{ 
-            fontSize: '0.75rem', 
-            color: 'var(--neutral-500)',
-            marginTop: '1rem',
-            padding: '0.75rem',
-            background: 'var(--neutral-50)',
-            borderRadius: 'var(--radius-md)'
-          }}>
-            Telegram: {debugInfo.telegramAvailable ? 'Available' : 'Not detected'}
-          </div>
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        padding: '24px',
+        backgroundColor: '#ffffff',
+        color: '#111827',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        textAlign: 'center'
+      }}>
+        <div style={{ fontSize: '4rem', marginBottom: '16px' }}>📱</div>
+        <div style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '8px' }}>Open from Telegram</div>
+        <div style={{ fontSize: '0.9rem', color: '#6b7280', marginBottom: '16px' }}>
+          Please open this app from the Telegram bot
+        </div>
+        <div style={{ 
+          fontSize: '0.75rem', 
+          color: '#6b7280',
+          padding: '12px',
+          background: '#f9fafb',
+          borderRadius: '8px'
+        }}>
+          Telegram: {debugInfo.telegramAvailable ? 'Available' : 'Not detected'}
         </div>
       </div>
     )
