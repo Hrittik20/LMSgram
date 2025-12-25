@@ -8,16 +8,19 @@ import Assignments from './components/Assignments'
 // Auto-detect API URL based on environment
 const getApiBaseUrl = () => {
   if (import.meta.env.VITE_API_URL) {
+    console.log('Using API URL:', import.meta.env.VITE_API_URL)
     return import.meta.env.VITE_API_URL
   }
   if (import.meta.env.DEV) {
-    return '/api'
+    return 'http://localhost:3000/api'
   }
-  console.warn('⚠️ VITE_API_URL not set!')
+  // In production without VITE_API_URL, this won't work
+  console.error('⚠️ VITE_API_URL not set! Backend API calls will fail.')
   return '/api'
 }
 
 const API_BASE_URL = getApiBaseUrl()
+const IS_API_CONFIGURED = !!import.meta.env.VITE_API_URL || import.meta.env.DEV
 
 // Bottom Navigation Component
 function BottomNav() {

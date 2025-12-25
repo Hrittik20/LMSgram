@@ -62,7 +62,8 @@ function CourseDetail({ course, user, onBack, onUpdate }) {
       }
     } catch (err) {
       console.error('Error loading course data:', err)
-      setError('Failed to load course data')
+      const errorMsg = err.response?.data?.error || err.message || 'Failed to load course data'
+      setError(`${errorMsg} (API: ${API_BASE_URL})`)
     } finally {
       setLoading(false)
     }
@@ -81,7 +82,12 @@ function CourseDetail({ course, user, onBack, onUpdate }) {
     return (
       <div className="page">
         <button className="btn btn-ghost mb-md" onClick={onBack}>← Back</button>
-        <div className="alert alert-error">{error}</div>
+        <div className="alert alert-error">
+          {error}
+          <div style={{ fontSize: '0.8rem', marginTop: '8px', opacity: 0.8 }}>
+            API: {API_BASE_URL}
+          </div>
+        </div>
         <button className="btn btn-primary" onClick={loadCourseData}>Retry</button>
       </div>
     )
