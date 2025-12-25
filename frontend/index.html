@@ -3,26 +3,127 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>LMS - Learning Management System</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+      /* Inline critical styles for initial load */
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { 
+        height: 100%; 
+        width: 100%;
+        overflow-x: hidden;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background-color: #ffffff;
+        color: #111827;
+      }
+      #root {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      /* Initial loading state */
+      #initial-loader {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: #ffffff;
+        z-index: 9999;
+      }
+      #initial-loader .spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid #e5e7eb;
+        border-top-color: #3378ff;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      #initial-loader .text {
+        margin-top: 16px;
+        color: #6b7280;
+        font-size: 14px;
+      }
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+      /* Error display */
+      #error-display {
+        display: none;
+        position: fixed;
+        inset: 0;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: #ffffff;
+        padding: 24px;
+        text-align: center;
+        z-index: 9998;
+      }
+      #error-display.show { display: flex; }
+      #error-display h1 { font-size: 48px; margin-bottom: 16px; }
+      #error-display h2 { font-size: 20px; margin-bottom: 8px; }
+      #error-display p { color: #6b7280; max-width: 300px; word-wrap: break-word; }
+      #error-display button {
+        margin-top: 16px;
+        padding: 12px 24px;
+        background: #3378ff;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        cursor: pointer;
+      }
+    </style>
   </head>
   <body>
+    <!-- Initial loader shown before React loads -->
+    <div id="initial-loader">
+      <div class="spinner"></div>
+      <div class="text">Loading LMS...</div>
+    </div>
+    
+    <!-- Error display for JS errors -->
+    <div id="error-display">
+      <h1>⚠️</h1>
+      <h2>Something went wrong</h2>
+      <p id="error-message">Failed to load the application.</p>
+      <button onclick="window.location.reload()">Try Again</button>
+    </div>
+    
     <div id="root"></div>
+    
+    <script>
+      // Hide loader when React takes over
+      window.addEventListener('DOMContentLoaded', function() {
+        // Wait a bit for React to mount
+        setTimeout(function() {
+          var loader = document.getElementById('initial-loader');
+          if (loader && document.getElementById('root').children.length > 0) {
+            loader.style.display = 'none';
+          }
+        }, 100);
+      });
+      
+      // Global error handler
+      window.onerror = function(msg, url, line, col, error) {
+        console.error('Global error:', msg, url, line, col, error);
+        document.getElementById('initial-loader').style.display = 'none';
+        document.getElementById('error-message').textContent = msg || 'An unexpected error occurred';
+        document.getElementById('error-display').classList.add('show');
+        return false;
+      };
+      
+      // Unhandled promise rejection handler
+      window.addEventListener('unhandledrejection', function(event) {
+        console.error('Unhandled rejection:', event.reason);
+      });
+    </script>
+    
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
