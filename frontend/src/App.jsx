@@ -101,23 +101,19 @@ function App() {
       console.log('API_BASE_URL:', API_BASE_URL)
       console.log('Environment:', import.meta.env.MODE)
       
-      // Test API connection first
+      // Test API connection first (optional - don't block if it fails)
       try {
         console.log('Testing API connection...')
-        const healthCheck = await axios.get(`${API_BASE_URL.replace('/api', '')}/health`, {
-          timeout: 5000
-        }).catch(() => {
-          // Try with /api prefix
-          return axios.get(`${API_BASE_URL}/health`, { timeout: 5000 })
-        }).catch(() => null)
+        // Health endpoint is at root, not under /api
+        const healthUrl = API_BASE_URL.includes('/api') 
+          ? API_BASE_URL.replace('/api', '') + '/health'
+          : API_BASE_URL + '/health'
         
-        if (healthCheck) {
-          console.log('✅ API connection successful')
-        } else {
-          console.warn('⚠️ API health check failed - API might be unreachable')
-        }
+        const healthCheck = await axios.get(healthUrl, { timeout: 5000 })
+        console.log('✅ API connection successful:', healthCheck.data)
       } catch (err) {
-        console.warn('⚠️ API health check error:', err.message)
+        console.warn('⚠️ API health check failed:', err.message)
+        console.warn('This is OK if backend is not yet deployed or URL is incorrect')
       }
       
       // Get user from Telegram WebApp
